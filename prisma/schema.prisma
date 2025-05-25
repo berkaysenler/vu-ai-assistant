@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  fullName     String
+  displayName  String?
+  password     String
+  verified     Boolean  @default(false)
+  theme        String   @default("blue") // Theme color preference
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  chats        Chat[]
+  sessions     Session[]
+  verificationTokens VerificationToken[]
+  
+  @@map("users")
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  type      TokenType
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User     @relation(fields: [email], references: [email], onDelete: Cascade)
+  
+  @@map("verification_tokens")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @default("New Chat")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  
+  @@map("chats")
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  chatId    String
+  content   String
+  role      MessageRole
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  // Relations
+  chat      Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  @@map("messages")
+}
+
+model FAQ {
+  id        String   @id @default(cuid()) 
+  question  String
+  answer    String
+  category  String?
+  keywords  String[] // Array of keywords for search
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("faqs")
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
