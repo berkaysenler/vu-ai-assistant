@@ -5,11 +5,14 @@ import { ChatInterface } from "@/components/chat/chat-interface";
 import { useChats } from "@/lib/hooks/use-chats";
 
 export default function DashboardPage() {
-  const { activeChat } = useChats();
+  const { activeChat, sendMessage } = useChats();
 
   const handleSendMessage = async (message: string) => {
-    // TODO: Implement message sending
-    console.log("Sending message:", message);
+    try {
+      await sendMessage(message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   return (

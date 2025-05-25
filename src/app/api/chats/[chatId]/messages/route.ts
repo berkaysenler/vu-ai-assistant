@@ -24,7 +24,7 @@ export async function GET(
       return errorResponse("Invalid or expired token", 401);
     }
 
-    const { chatId } = await params;
+    const chatId = params.chatId;
     if (!chatId) {
       return errorResponse("Chat ID is required", 400);
     }

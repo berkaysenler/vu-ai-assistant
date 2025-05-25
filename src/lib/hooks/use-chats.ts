@@ -27,6 +27,7 @@ interface UseChatsResult {
   createNewChat: () => Promise<void>;
   selectChat: (chatId: string) => Promise<void>;
   deleteChat: (chatId: string) => Promise<void>;
+  sendMessage: (message: string) => Promise<void>;
   refreshChats: () => Promise<void>;
 }
 
@@ -97,7 +98,7 @@ export function useChats(): UseChatsResult {
           const newChat = data.data.chat;
           // Add to chats list
           setChats((prev) => [newChat, ...prev]);
-          // Automatically select the new chat
+          // Automatically select the new chat and fetch its messages
           await selectChat(newChat.id);
         } else {
           setError(data.message);
@@ -147,6 +148,50 @@ export function useChats(): UseChatsResult {
     }
   };
 
+  // Send message to active chat
+  const sendMessage = async (message: string) => {
+    if (!activeChat) {
+      setError("No active chat selected");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/chats/${activeChat.id}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ content: message }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Add the new messages to the active chat
+          const { userMessage, aiMessage } = data.data;
+          setActiveChat((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              messages: [...prev.messages, userMessage, aiMessage],
+            };
+          });
+
+          // Refresh chats list to update the timestamp and possibly name
+          await fetchChats();
+        } else {
+          setError(data.message);
+        }
+      } else {
+        setError("Failed to send message");
+      }
+    } catch (err) {
+      setError("An error occurred while sending message");
+      console.error("Send message error:", err);
+    }
+  };
+
   // Refresh chats list
   const refreshChats = async () => {
     setIsLoading(true);
@@ -172,6 +217,7 @@ export function useChats(): UseChatsResult {
     createNewChat,
     selectChat,
     deleteChat,
+    sendMessage,
     refreshChats,
   };
 }
