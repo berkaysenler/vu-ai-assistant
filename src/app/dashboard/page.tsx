@@ -24,7 +24,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         // Show Dashboard Content when no chat is selected
-        <>
+        <div className="max-w-7xl mx-auto">
           {/* Welcome Section */}
           <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
             <div className="px-4 py-5 sm:p-6">
@@ -201,7 +201,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </DashboardLayout>
   );
