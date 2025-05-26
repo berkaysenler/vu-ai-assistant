@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import { useUser } from "@/lib/hooks/use-user";
-import { useChats } from "@/lib/hooks/use-chats";
+import { Chat, ChatWithMessages, useChats } from "@/lib/hooks/use-chats";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ChatInterface } from "../chat/chat-interface";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  chats: Chat[];
+  activeChat: ChatWithMessages | null;
+  isLoading: boolean;
+  createNewChat: () => Promise<void>;
+  selectChat: (chatId: string) => Promise<void>;
+  deleteChat: (chatId: string) => Promise<void>;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -121,9 +128,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex flex-col h-full">
           {/* VU Logo and Title */}
@@ -233,11 +238,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     >
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-sm font-medium truncate ${
-                            activeChat?.id === chat.id
-                              ? "text-blue-900"
-                              : "text-gray-900"
-                          }`}
+                          className={`text-sm font-medium truncate ${activeChat?.id === chat.id ? "text-blue-900" : "text-gray-900"}`}
                         >
                           {chat.name}
                         </p>
@@ -396,7 +397,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page Content */}
         <main className="flex-1">
-          <div className="px-4 sm:px-6 lg:px-8 py-6">{children}</div>
+          <div className="px-4 sm:px-6 lg:px-8 py-6">
+            {activeChat ? (
+              <ChatInterface chat={activeChat} />
+            ) : (
+              <div className="text-gray-500 text-center mt-10 text-sm">
+                No chat selected
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </div>
