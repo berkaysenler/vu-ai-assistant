@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@/lib/hooks/use-user";
 import { Chat, ChatWithMessages } from "@/lib/hooks/use-chats";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 interface DashboardLayoutProps {
@@ -15,6 +15,56 @@ interface DashboardLayoutProps {
   selectChat: (chatId: string) => Promise<void>;
   deleteChat: (chatId: string) => Promise<void>;
 }
+
+// Theme color mappings
+const getThemeColors = (theme: string) => {
+  const themes = {
+    blue: {
+      primary: "bg-blue-600",
+      primaryHover: "hover:bg-blue-700",
+      primaryLight: "bg-blue-50",
+      primaryBorder: "border-blue-200",
+      primaryText: "text-blue-900",
+    },
+    green: {
+      primary: "bg-green-600",
+      primaryHover: "hover:bg-green-700",
+      primaryLight: "bg-green-50",
+      primaryBorder: "border-green-200",
+      primaryText: "text-green-900",
+    },
+    purple: {
+      primary: "bg-purple-600",
+      primaryHover: "hover:bg-purple-700",
+      primaryLight: "bg-purple-50",
+      primaryBorder: "border-purple-200",
+      primaryText: "text-purple-900",
+    },
+    red: {
+      primary: "bg-red-600",
+      primaryHover: "hover:bg-red-700",
+      primaryLight: "bg-red-50",
+      primaryBorder: "border-red-200",
+      primaryText: "text-red-900",
+    },
+    orange: {
+      primary: "bg-orange-600",
+      primaryHover: "hover:bg-orange-700",
+      primaryLight: "bg-orange-50",
+      primaryBorder: "border-orange-200",
+      primaryText: "text-orange-900",
+    },
+    indigo: {
+      primary: "bg-indigo-600",
+      primaryHover: "hover:bg-indigo-700",
+      primaryLight: "bg-indigo-50",
+      primaryBorder: "border-indigo-200",
+      primaryText: "text-indigo-900",
+    },
+  };
+
+  return themes[theme as keyof typeof themes] || themes.blue;
+};
 
 export function DashboardLayout({
   children,
@@ -28,6 +78,11 @@ export function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Get user's theme
+  const userTheme = (user as any)?.theme || "blue";
+  const themeColors = getThemeColors(userTheme);
 
   const handleLogout = async () => {
     try {
@@ -48,16 +103,24 @@ export function DashboardLayout({
 
   const handleNewChat = async () => {
     await createNewChat();
-    setSidebarOpen(false); // Close mobile sidebar
+    setSidebarOpen(false);
+    // If we're on profile page, navigate to dashboard to show the new chat
+    if (pathname === "/profile") {
+      router.push("/dashboard");
+    }
   };
 
   const handleSelectChat = async (chatId: string) => {
     await selectChat(chatId);
-    setSidebarOpen(false); // Close mobile sidebar
+    setSidebarOpen(false);
+    // If we're on profile page, navigate to dashboard to show the selected chat
+    if (pathname === "/profile") {
+      router.push("/dashboard");
+    }
   };
 
   const handleDeleteChat = async (chatId: string, e?: React.MouseEvent) => {
-    e?.stopPropagation(); // Prevent chat selection when clicking delete
+    e?.stopPropagation();
     if (confirm("Are you sure you want to delete this chat?")) {
       await deleteChat(chatId);
     }
@@ -135,8 +198,9 @@ export function DashboardLayout({
             {/* VU Logo and Title */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <div className="flex items-center space-x-3">
-                {/* VU Logo Placeholder */}
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <div
+                  className={`w-8 h-8 ${themeColors.primary} rounded-lg flex items-center justify-center`}
+                >
                   <span className="text-white font-bold text-sm">VU</span>
                 </div>
                 <div>
@@ -173,7 +237,7 @@ export function DashboardLayout({
               <button
                 onClick={handleNewChat}
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full ${themeColors.primary} text-white px-4 py-3 rounded-lg ${themeColors.primaryHover} transition-colors flex items-center justify-center space-x-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <svg
                   className="w-5 h-5"
@@ -232,14 +296,18 @@ export function DashboardLayout({
                         key={chat.id}
                         className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                           activeChat?.id === chat.id
-                            ? "bg-blue-50 border border-blue-200"
+                            ? `${themeColors.primaryLight} border ${themeColors.primaryBorder}`
                             : "hover:bg-gray-50"
                         }`}
                         onClick={() => handleSelectChat(chat.id)}
                       >
                         <div className="flex-1 min-w-0">
                           <p
-                            className={`text-sm font-medium truncate ${activeChat?.id === chat.id ? "text-blue-900" : "text-gray-900"}`}
+                            className={`text-sm font-medium truncate ${
+                              activeChat?.id === chat.id
+                                ? themeColors.primaryText
+                                : "text-gray-900"
+                            }`}
                           >
                             {chat.name}
                           </p>
@@ -276,8 +344,12 @@ export function DashboardLayout({
             {/* User Profile Section at Bottom */}
             <div className="border-t border-gray-200 p-4">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-sm">
+                <div
+                  className={`w-10 h-10 ${themeColors.primaryLight} rounded-full flex items-center justify-center`}
+                >
+                  <span
+                    className={`${themeColors.primaryText.replace("text-", "text-")} font-semibold text-sm`}
+                  >
                     {user.fullName.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -292,7 +364,9 @@ export function DashboardLayout({
               {/* Profile Actions */}
               <div className="space-y-1">
                 <Link href="/profile">
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2">
+                  <button
+                    className={`w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2 ${pathname === "/profile" ? "bg-gray-100" : ""}`}
+                  >
                     <svg
                       className="w-4 h-4"
                       fill="none"
@@ -369,28 +443,21 @@ export function DashboardLayout({
                 {/* Header Title */}
                 <div className="flex-1 lg:flex-none">
                   <h2 className="text-xl font-semibold text-gray-900">
-                    {activeChat ? activeChat.name : "Dashboard"}
+                    {pathname === "/profile"
+                      ? "Profile Settings"
+                      : activeChat
+                        ? activeChat.name
+                        : "Dashboard"}
                   </h2>
                 </div>
 
                 {/* Header Actions */}
                 <div className="flex items-center space-x-4">
-                  {/* Notifications placeholder */}
-                  <button className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 17h5l-3.403-3.403A4.004 4.004 0 0122 7a4 4 0 11-8 0 4.004 4.004 0 01-4.597 3.932L7 15H2v2a2 2 0 002 2h11z"
-                      />
-                    </svg>
-                  </button>
+                  {/* User theme indicator */}
+                  <div
+                    className={`w-3 h-3 ${themeColors.primary} rounded-full`}
+                    title={`Theme: ${userTheme}`}
+                  ></div>
                 </div>
               </div>
             </div>
@@ -398,10 +465,7 @@ export function DashboardLayout({
 
           {/* Page Content */}
           <main className="flex-1 overflow-auto">
-            <div className="px-4 sm:px-6 lg:px-8 py-6">
-              {/* Render the children passed to the layout */}
-              {children}
-            </div>
+            <div className="px-4 sm:px-6 lg:px-8 py-6">{children}</div>
           </main>
         </div>
       </div>

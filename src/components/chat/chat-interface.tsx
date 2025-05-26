@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ChatWithMessages } from "@/lib/hooks/use-chats";
+import { useUser } from "@/lib/hooks/use-user";
 
 interface ChatInterfaceProps {
   chat: ChatWithMessages;
@@ -12,6 +13,59 @@ export function ChatInterface({ chat, onSendMessage }: ChatInterfaceProps) {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useUser();
+
+  // Get user's theme
+  const userTheme = user?.theme || "blue";
+
+  const getThemeClasses = (theme: string) => {
+    switch (theme) {
+      case "green":
+        return {
+          primary: "bg-green-600",
+          primaryHover: "hover:bg-green-700",
+          primaryLight: "bg-green-100",
+          primaryText: "text-green-100",
+        };
+      case "purple":
+        return {
+          primary: "bg-purple-600",
+          primaryHover: "hover:bg-purple-700",
+          primaryLight: "bg-purple-100",
+          primaryText: "text-purple-100",
+        };
+      case "red":
+        return {
+          primary: "bg-red-600",
+          primaryHover: "hover:bg-red-700",
+          primaryLight: "bg-red-100",
+          primaryText: "text-red-100",
+        };
+      case "orange":
+        return {
+          primary: "bg-orange-600",
+          primaryHover: "hover:bg-orange-700",
+          primaryLight: "bg-orange-100",
+          primaryText: "text-orange-100",
+        };
+      case "indigo":
+        return {
+          primary: "bg-indigo-600",
+          primaryHover: "hover:bg-indigo-700",
+          primaryLight: "bg-indigo-100",
+          primaryText: "text-indigo-100",
+        };
+      default: // blue
+        return {
+          primary: "bg-blue-600",
+          primaryHover: "hover:bg-blue-700",
+          primaryLight: "bg-blue-100",
+          primaryText: "text-blue-100",
+        };
+    }
+  };
+
+  const themeClasses = getThemeClasses(userTheme);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -58,7 +112,7 @@ export function ChatInterface({ chat, onSendMessage }: ChatInterfaceProps) {
             <div
               className={`max-w-2xl rounded-lg px-4 py-2 ${
                 msg.role === "USER"
-                  ? "bg-blue-600 text-white"
+                  ? `${themeClasses.primary} text-white`
                   : "bg-white border border-gray-200 text-gray-900"
               }`}
             >
@@ -67,7 +121,9 @@ export function ChatInterface({ chat, onSendMessage }: ChatInterfaceProps) {
               </div>
               <div
                 className={`text-xs mt-1 ${
-                  msg.role === "USER" ? "text-blue-100" : "text-gray-500"
+                  msg.role === "USER"
+                    ? themeClasses.primaryText
+                    : "text-gray-500"
                 }`}
               >
                 {formatMessageTime(msg.createdAt)}
@@ -117,7 +173,7 @@ export function ChatInterface({ chat, onSendMessage }: ChatInterfaceProps) {
                 }
               }}
               placeholder="Ask about courses, enrollment, campus facilities, or anything VU-related..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-offset-2 focus:border-transparent resize-none focus:ring-${userTheme}-500`}
               rows={1}
               style={{ minHeight: "44px", maxHeight: "120px" }}
               disabled={isSending}
@@ -126,7 +182,7 @@ export function ChatInterface({ chat, onSendMessage }: ChatInterfaceProps) {
           <button
             type="submit"
             disabled={!message.trim() || isSending}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={`px-6 py-3 ${themeClasses.primary} text-white rounded-lg ${themeClasses.primaryHover} focus:ring-2 focus:ring-offset-2 focus:ring-${userTheme}-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
           >
             <svg
               className="w-5 h-5"

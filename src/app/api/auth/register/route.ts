@@ -10,7 +10,7 @@ import {
   isValidEmail,
   isValidPassword,
 } from "@/lib/auth";
-import { sendEmailDev } from "@/lib/email-dev";
+import { sendEmail, getRegistrationVerificationTemplate } from "@/lib/email";
 import {
   successResponse,
   errorResponse,
@@ -96,23 +96,21 @@ export async function POST(request: NextRequest) {
       type: "EMAIL_VERIFICATION",
       expiresAt,
     });
-    console.log("Token created in database:", {
-      token: verificationToken.substring(0, 10) + "...",
-      email: user.email,
-      expiresAt: expiresAt.toISOString(),
-    });
+    console.log("Token created in database");
 
-    // Send verification email (dev mode)
+    // Send verification email
     console.log("Sending verification email...");
     const verificationUrl = `${process.env.APP_URL}/auth/verify?token=${verificationToken}`;
 
-    // For now, just log the verification URL
-    console.log("🔗 Verification URL:", verificationUrl);
+    const emailTemplate = getRegistrationVerificationTemplate(
+      verificationUrl,
+      user.fullName
+    );
 
-    await sendEmailDev({
+    const emailResult = await sendEmail({
       to: user.email,
-      subject: "Verify your email - VU Assistant",
-      html: `<p>Click this link to verify: <a href="${verificationUrl}">${verificationUrl}</a></p>`,
+      subject: "Welcome to VU Assistant - Verify your email",
+      html: emailTemplate,
     });
 
     console.log("Registration completed successfully");
@@ -123,7 +121,11 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         email: user.email,
         requiresVerification: true,
-        verificationUrl: verificationUrl, // Include in response for testing
+        emailSent: emailResult.success,
+        // Only include verification URL in development
+        ...(process.env.EMAIL_ENVIRONMENT !== "production" && {
+          verificationUrl: verificationUrl,
+        }),
       }
     );
   } catch (error) {

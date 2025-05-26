@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 interface FormData {
   displayName: string;
   email: string;
+  emailChangePassword: string;
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
@@ -17,6 +18,7 @@ interface FormData {
 interface FormErrors {
   displayName?: string;
   email?: string;
+  emailChangePassword?: string;
   currentPassword?: string;
   newPassword?: string;
   confirmPassword?: string;
@@ -33,10 +35,11 @@ const themeOptions = [
 ];
 
 export function ProfileSettingsForm() {
-  const { user, isLoading: userLoading } = useUser();
+  const { user, isLoading: userLoading, refreshUser } = useUser();
   const [formData, setFormData] = useState<FormData>({
     displayName: "",
     email: "",
+    emailChangePassword: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -54,7 +57,7 @@ export function ProfileSettingsForm() {
         ...prev,
         displayName: user.displayName || user.fullName,
         email: user.email,
-        theme: (user as any).theme || "blue",
+        theme: user.theme || "blue",
       }));
     }
   }, [user]);
@@ -76,7 +79,7 @@ export function ProfileSettingsForm() {
     }
   };
 
-  const validateForm = (isPasswordChange: boolean = false): boolean => {
+  const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
     // Validate display name
@@ -93,7 +96,16 @@ export function ProfileSettingsForm() {
       newErrors.email = "Please enter a valid email address";
     }
 
+    // If email is being changed, require password
+    if (formData.email.toLowerCase() !== user?.email.toLowerCase()) {
+      if (!formData.emailChangePassword) {
+        newErrors.emailChangePassword =
+          "Password is required to change email address";
+      }
+    }
+
     // Validate password fields only if user is trying to change password
+    const isPasswordChange = formData.newPassword.trim() !== "";
     if (isPasswordChange) {
       if (!formData.currentPassword) {
         newErrors.currentPassword = "Current password is required";
@@ -126,9 +138,7 @@ export function ProfileSettingsForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const isPasswordChange = formData.newPassword.trim() !== "";
-
-    if (!validateForm(isPasswordChange)) return;
+    if (!validateForm()) return;
 
     setIsLoading(true);
     setErrors({});
@@ -141,11 +151,25 @@ export function ProfileSettingsForm() {
         theme: formData.theme,
       };
 
-      // Only include password fields if user is changing password
-      if (isPasswordChange) {
+      // Include email change password if email is being changed
+      if (formData.email.toLowerCase() !== user?.email.toLowerCase()) {
+        updateData.emailChangePassword = formData.emailChangePassword;
+      }
+
+      // Include password fields if user is changing password
+      if (formData.newPassword.trim() !== "") {
         updateData.currentPassword = formData.currentPassword;
         updateData.newPassword = formData.newPassword;
       }
+
+      console.log("Sending update data:", {
+        ...updateData,
+        emailChangePassword: updateData.emailChangePassword
+          ? "[HIDDEN]"
+          : undefined,
+        currentPassword: updateData.currentPassword ? "[HIDDEN]" : undefined,
+        newPassword: updateData.newPassword ? "[HIDDEN]" : undefined,
+      });
 
       const response = await fetch("/api/user/profile", {
         method: "PUT",
@@ -157,25 +181,28 @@ export function ProfileSettingsForm() {
       });
 
       const data = await response.json();
+      console.log("Update response:", data);
 
       if (data.success) {
         setSuccessMessage(data.message);
 
         // Clear password fields after successful update
-        if (isPasswordChange) {
-          setFormData((prev) => ({
-            ...prev,
-            currentPassword: "",
-            newPassword: "",
-            confirmPassword: "",
-          }));
-        }
+        setFormData((prev) => ({
+          ...prev,
+          emailChangePassword: "",
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
 
-        // Refresh page to update user data if email was changed
-        if (data.data?.emailChangeRequested) {
+        // Refresh user data to get the latest information
+        await refreshUser();
+
+        // If theme was changed, refresh the page to apply new theme
+        if (updateData.theme !== user?.theme) {
           setTimeout(() => {
             window.location.reload();
-          }, 2000);
+          }, 1000);
         }
       } else {
         setErrors({ general: data.message });
@@ -203,6 +230,9 @@ export function ProfileSettingsForm() {
       </div>
     );
   }
+
+  const isEmailChanged =
+    formData.email.toLowerCase() !== user.email.toLowerCase();
 
   return (
     <div className="max-w-2xl">
@@ -262,13 +292,37 @@ export function ProfileSettingsForm() {
                 error={errors.email}
                 placeholder="Enter your email address"
               />
-              {formData.email !== user.email && (
+              {isEmailChanged && (
                 <p className="mt-1 text-xs text-orange-600">
-                  Changing your email will require verification
+                  ⚠️ Changing your email will require verification
                 </p>
               )}
             </div>
           </div>
+
+          {/* Email Change Password Field */}
+          {isEmailChanged && (
+            <div className="mt-4">
+              <label
+                htmlFor="emailChangePassword"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Confirm Password for Email Change
+              </label>
+              <Input
+                id="emailChangePassword"
+                name="emailChangePassword"
+                type="password"
+                value={formData.emailChangePassword}
+                onChange={handleInputChange}
+                error={errors.emailChangePassword}
+                placeholder="Enter your current password to confirm email change"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                For security, we need your password to change your email address
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Theme Selection */}
@@ -276,6 +330,12 @@ export function ProfileSettingsForm() {
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Theme Preference
           </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Current theme:{" "}
+            <span className="font-medium capitalize">
+              {user.theme || "blue"}
+            </span>
+          </p>
 
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {themeOptions.map((theme) => (
@@ -299,6 +359,17 @@ export function ProfileSettingsForm() {
                 <span className="text-xs font-medium text-gray-900">
                   {theme.name}
                 </span>
+                {formData.theme === theme.value && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-2 h-2 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 8 8"
+                    >
+                      <path d="M6.564.75l-3.59 3.612-1.538-1.55L0 4.26l2.974 2.99L8 2.193z" />
+                    </svg>
+                  </div>
+                )}
               </label>
             ))}
           </div>

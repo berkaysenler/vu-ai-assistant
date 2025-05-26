@@ -24,7 +24,7 @@ interface UseChatsResult {
   activeChat: ChatWithMessages | null;
   isLoading: boolean;
   error: string | null;
-  createNewChat: () => Promise<void>;
+  createNewChat: (initialMessage?: string) => Promise<void>;
   selectChat: (chatId: string) => Promise<void>;
   deleteChat: (chatId: string) => Promise<void>;
   refreshChats: () => Promise<void>;
@@ -83,8 +83,8 @@ export function useChats(): UseChatsResult {
     }
   };
 
-  // Create new chat
-  const createNewChat = async () => {
+  // Create new chat with optional initial message
+  const createNewChat = async (initialMessage?: string) => {
     try {
       setIsLoading(true);
       const response = await fetch("/api/chats", {
@@ -100,6 +100,18 @@ export function useChats(): UseChatsResult {
           setChats((prev) => [newChat, ...prev]);
           // Automatically select the new chat
           await selectChat(newChat.id);
+
+          // If there's an initial message, send it
+          if (initialMessage && initialMessage.trim()) {
+            // Wait a moment for the chat to be properly selected
+            setTimeout(async () => {
+              try {
+                await sendMessage(initialMessage.trim());
+              } catch (err) {
+                console.error("Error sending initial message:", err);
+              }
+            }, 500);
+          }
         } else {
           setError(data.message);
         }
@@ -174,7 +186,7 @@ export function useChats(): UseChatsResult {
           : null
       );
 
-      // Send message to API (placeholder for now)
+      // Send message to API
       const response = await fetch(`/api/chats/${activeChat.id}/messages`, {
         method: "POST",
         headers: {
@@ -187,6 +199,8 @@ export function useChats(): UseChatsResult {
       if (response.ok) {
         // Refresh the chat to get the AI response
         await fetchChat(activeChat.id);
+        // Also refresh the chats list to update the "updated at" time
+        await fetchChats();
       } else {
         setError("Failed to send message");
         // Remove the optimistic message on error

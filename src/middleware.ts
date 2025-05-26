@@ -4,7 +4,14 @@ import { verifyJWTEdge } from "@/lib/auth-edge";
 
 // Define protected routes
 const protectedRoutes = ["/dashboard", "/profile", "/chat"];
-const authRoutes = ["/auth/login", "/auth/register", "/auth/verify"];
+const authRoutes = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/verify",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-email-change",
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -63,19 +70,6 @@ export async function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
-
-// export const config = {
-//   matcher: [
-//     /*
-//      * Match all request paths except for the ones starting with:
-//      * - api (API routes)
-//      * - _next/static (static files)
-//      * - _next/image (image optimization files)
-//      * - favicon.ico (favicon file)
-//      */
-//     "/((?!api|_next/static|_next/image|favicon.ico).*)",
-//   ],
-// };
 
 export const config = {
   matcher: [

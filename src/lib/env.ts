@@ -63,7 +63,7 @@ export const env = {
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET!,
   APP_URL: process.env.APP_URL!,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
-  EMAIL_FROM: process.env.EMAIL_FROM || "VU Assistant <noreply@localhost>",
+  EMAIL_FROM: process.env.EMAIL_FROM || "VU Assistant <noreply@resend.dev>",
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   NODE_ENV: process.env.NODE_ENV || "development",
 } as const;

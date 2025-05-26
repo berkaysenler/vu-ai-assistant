@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
     const client = await pool.connect();
 
     try {
-      // Get user info from database
+      // Get user info from database - ADDED theme field
       const userResult = await client.query(
-        'SELECT id, email, "fullName", "displayName", verified FROM users WHERE id = $1',
+        'SELECT id, email, "fullName", "displayName", theme, verified FROM users WHERE id = $1',
         [payload.userId]
       );
 
@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
           email: user.email,
           fullName: user.fullName,
           displayName: user.displayName || user.fullName,
+          theme: user.theme || "blue", // ADDED theme field with default
           verified: user.verified,
         },
       });

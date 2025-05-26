@@ -41,9 +41,10 @@ model VerificationToken {
   type      TokenType
   expiresAt DateTime
   createdAt DateTime @default(now())
+  userId    String?  // Made optional and added for email changes
   
-  // Relations
-  user      User     @relation(fields: [email], references: [email], onDelete: Cascade)
+  // Relations - made optional since email changes use different email
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("verification_tokens")
 }
@@ -104,6 +105,7 @@ model FAQ {
 enum TokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+  EMAIL_CHANGE  // Add this new token type
 }
 
 enum MessageRole {

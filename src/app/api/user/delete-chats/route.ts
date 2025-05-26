@@ -24,22 +24,26 @@ export async function DELETE(request: NextRequest) {
     const client = await pool.connect();
 
     try {
-      // Get all user's chat IDs
-      const chatsResult = await client.query(
-        'SELECT id FROM chats WHERE "userId" = $1',
+      // Get count of user's chats first
+      const chatCountResult = await client.query(
+        'SELECT COUNT(*) as count FROM chats WHERE "userId" = $1',
         [payload.userId]
       );
 
-      const chatIds = chatsResult.rows.map((row) => row.id);
+      const chatCount = parseInt(chatCountResult.rows[0].count);
 
-      if (chatIds.length === 0) {
+      if (chatCount === 0) {
         return successResponse("No chats to delete");
       }
 
-      // Delete all messages for user's chats
-      await client.query('DELETE FROM messages WHERE "chatId" = ANY($1)', [
-        chatIds,
-      ]);
+      // Delete all messages for user's chats first
+      await client.query(
+        `DELETE FROM messages 
+         WHERE "chatId" IN (
+           SELECT id FROM chats WHERE "userId" = $1
+         )`,
+        [payload.userId]
+      );
 
       // Delete all user's chats
       const deleteResult = await client.query(
@@ -53,7 +57,7 @@ export async function DELETE(request: NextRequest) {
       );
 
       return successResponse(
-        `Successfully deleted ${deleteResult.rowCount} chats and all associated messages`
+        `Successfully deleted ${chatCount} chats and all associated messages`
       );
     } finally {
       client.release();

@@ -5,14 +5,14 @@ import {
   hashPassword,
   generateVerificationToken,
   isValidEmail,
+  verifyPassword,
 } from "@/lib/auth";
-import { sendEmailDev } from "@/lib/email-dev";
+import { sendEmail, getEmailChangeVerificationTemplate } from "@/lib/email";
 import {
   successResponse,
   errorResponse,
   validationErrorResponse,
 } from "@/lib/response";
-import { isDev } from "@/lib/env";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -20,6 +20,8 @@ const pool = new Pool({
 
 // PUT /api/user/profile - Update user profile
 export async function PUT(request: NextRequest) {
+  console.log("Profile update API called");
+
   try {
     const token = request.cookies.get("auth-token")?.value;
 
@@ -33,9 +35,24 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { displayName, email, currentPassword, newPassword, theme } = body;
+    const {
+      displayName,
+      email,
+      currentPassword,
+      newPassword,
+      theme,
+      emailChangePassword,
+    } = body;
 
-    console.log("Profile update request for user:", payload.userId);
+    console.log("Profile update request:", {
+      userId: payload.userId,
+      displayName,
+      email,
+      theme,
+      hasCurrentPassword: !!currentPassword,
+      hasNewPassword: !!newPassword,
+      hasEmailChangePassword: !!emailChangePassword,
+    });
 
     const client = await pool.connect();
 
@@ -54,6 +71,7 @@ export async function PUT(request: NextRequest) {
       const updates: string[] = [];
       const values: any[] = [];
       let paramCount = 1;
+      let emailChangeRequested = false;
 
       // Update display name
       if (
@@ -68,6 +86,7 @@ export async function PUT(request: NextRequest) {
         updates.push(`"displayName" = $${paramCount}`);
         values.push(displayName.trim());
         paramCount++;
+        console.log("Will update displayName to:", displayName.trim());
       }
 
       // Update theme
@@ -86,58 +105,94 @@ export async function PUT(request: NextRequest) {
         updates.push(`theme = $${paramCount}`);
         values.push(theme);
         paramCount++;
+        console.log("Will update theme to:", theme);
       }
 
-      // Handle email change (requires re-verification)
-      let emailChangeRequested = false;
-      if (email !== undefined && email !== currentUser.email) {
+      // Handle email change with password verification and email confirmation
+      if (
+        email !== undefined &&
+        email.toLowerCase() !== currentUser.email.toLowerCase()
+      ) {
         if (!isValidEmail(email)) {
           return validationErrorResponse("Please enter a valid email address");
         }
 
+        // Require password for email changes
+        if (!emailChangePassword) {
+          return validationErrorResponse(
+            "Password is required to change email address"
+          );
+        }
+
+        // Verify password
+        const isPasswordValid = await verifyPassword(
+          emailChangePassword,
+          currentUser.password
+        );
+        if (!isPasswordValid) {
+          return errorResponse("Incorrect password", 400);
+        }
+
         // Check if email already exists
         const emailCheckResult = await client.query(
-          "SELECT id FROM users WHERE email = $1 AND id != $2",
-          [email.toLowerCase(), payload.userId]
+          "SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND id != $2",
+          [email.trim(), payload.userId]
         );
 
         if (emailCheckResult.rows.length > 0) {
           return errorResponse("An account with this email already exists");
         }
 
-        // For email changes, we'll send verification but not update immediately
+        // Don't update email immediately - create verification token instead
         emailChangeRequested = true;
 
         // Generate verification token for email change
         const verificationToken = generateVerificationToken();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-        // Store email change request
+        // Delete any existing email change tokens for this user
         await client.query(
-          `
-          INSERT INTO verification_tokens (id, email, token, type, "expiresAt", "createdAt")
-          VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
-          ON CONFLICT (email, type) DO UPDATE SET
-          token = $2, "expiresAt" = $4, "createdAt" = NOW()
-        `,
-          [email.toLowerCase(), verificationToken, "EMAIL_CHANGE", expiresAt]
+          `DELETE FROM verification_tokens 
+           WHERE email = $1 AND type = 'EMAIL_CHANGE'`,
+          [currentUser.email]
         );
 
-        // Send verification email
+        // Insert new email change token with the NEW email stored
+        await client.query(
+          `INSERT INTO verification_tokens (id, email, token, type, "expiresAt", "createdAt", "userId")
+           VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), $5)`,
+          [
+            email.toLowerCase().trim(),
+            verificationToken,
+            "EMAIL_CHANGE",
+            expiresAt,
+            payload.userId,
+          ]
+        );
+
+        // Send verification email to NEW email address
         const verificationUrl = `${process.env.APP_URL}/auth/verify-email-change?token=${verificationToken}`;
 
-        if (isDev) {
-          console.log("🔗 Email Change Verification URL:", verificationUrl);
-          await sendEmailDev({
-            to: email,
-            subject: "Verify your new email - VU Assistant",
-            html: `<p>Click this link to verify your new email address: <a href="${verificationUrl}">${verificationUrl}</a></p>`,
-          });
-        }
+        console.log("🔗 Email Change Verification URL:", verificationUrl);
+
+        const emailTemplate = getEmailChangeVerificationTemplate(
+          verificationUrl,
+          currentUser.fullName,
+          currentUser.email,
+          email.toLowerCase().trim()
+        );
+
+        await sendEmail({
+          to: email,
+          subject: "Verify your new email address - VU Assistant",
+          html: emailTemplate,
+        });
+
+        console.log("Email change verification sent to:", email);
       }
 
       // Handle password change
-      if (newPassword !== undefined) {
+      if (newPassword !== undefined && newPassword.trim() !== "") {
         if (!currentPassword) {
           return validationErrorResponse(
             "Current password is required to change password"
@@ -145,8 +200,7 @@ export async function PUT(request: NextRequest) {
         }
 
         // Verify current password
-        const bcrypt = require("bcryptjs");
-        const isCurrentPasswordValid = await bcrypt.compare(
+        const isCurrentPasswordValid = await verifyPassword(
           currentPassword,
           currentUser.password
         );
@@ -174,9 +228,10 @@ export async function PUT(request: NextRequest) {
         updates.push(`password = $${paramCount}`);
         values.push(hashedNewPassword);
         paramCount++;
+        console.log("Will update password");
       }
 
-      // Apply updates if any
+      // Apply updates if any (excluding email)
       if (updates.length > 0) {
         updates.push(`"updatedAt" = NOW()`);
         values.push(payload.userId);
@@ -188,26 +243,31 @@ export async function PUT(request: NextRequest) {
           RETURNING id, email, "fullName", "displayName", theme, verified
         `;
 
+        console.log("Update query:", updateQuery);
+        console.log("Update values:", values);
+
         const updateResult = await client.query(updateQuery, values);
         const updatedUser = updateResult.rows[0];
 
-        console.log("Profile updated successfully for user:", payload.userId);
+        console.log("Profile updated successfully:", updatedUser);
 
-        return successResponse(
-          emailChangeRequested
-            ? "Profile updated! Please check your new email to verify the email change."
-            : "Profile updated successfully!",
-          {
-            user: updatedUser,
-            emailChangeRequested,
-          }
-        );
+        let message = "Profile updated successfully!";
+        if (emailChangeRequested) {
+          message =
+            "Profile updated successfully! Please check your new email address to verify the email change.";
+        }
+
+        return successResponse(message, {
+          user: updatedUser,
+          emailChangeRequested,
+        });
       } else if (emailChangeRequested) {
         return successResponse(
-          "Email change requested! Please check your new email to verify the change.",
+          "Email change requested! Please check your new email address to verify the change.",
           { emailChangeRequested: true }
         );
       } else {
+        console.log("No changes to apply");
         return successResponse("No changes were made to your profile");
       }
     } finally {

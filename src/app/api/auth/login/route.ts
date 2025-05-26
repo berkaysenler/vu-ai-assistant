@@ -1,3 +1,4 @@
+// src/app/api/auth/login/route.ts
 import { NextRequest } from "next/server";
 import { Pool } from "pg";
 import {
@@ -47,8 +48,8 @@ export async function POST(request: NextRequest) {
       // Find user by email
       console.log("Looking up user...");
       const userResult = await client.query(
-        "SELECT * FROM users WHERE email = $1",
-        [email.toLowerCase()]
+        "SELECT * FROM users WHERE LOWER(email) = LOWER($1)",
+        [email.trim()]
       );
 
       if (userResult.rows.length === 0) {
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
           email: user.email,
           fullName: user.fullName,
           displayName: user.displayName || user.fullName,
+          theme: user.theme || "blue",
         },
       });
 
