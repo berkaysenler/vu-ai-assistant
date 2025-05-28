@@ -5,66 +5,17 @@ import { useUser } from "@/lib/hooks/use-user";
 import { Chat, ChatWithMessages } from "@/lib/hooks/use-chats";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { ProfileOverlay } from "../profile/profile-overlay";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   chats: Chat[];
   activeChat: ChatWithMessages | null;
   isLoading: boolean;
-  createNewChat: () => Promise<void>;
+  createNewChat: (initialMessage?: string) => Promise<string | undefined>;
   selectChat: (chatId: string) => Promise<void>;
   deleteChat: (chatId: string) => Promise<void>;
 }
-
-// Theme color mappings
-const getThemeColors = (theme: string) => {
-  const themes = {
-    blue: {
-      primary: "bg-blue-600",
-      primaryHover: "hover:bg-blue-700",
-      primaryLight: "bg-blue-50",
-      primaryBorder: "border-blue-200",
-      primaryText: "text-blue-900",
-    },
-    green: {
-      primary: "bg-green-600",
-      primaryHover: "hover:bg-green-700",
-      primaryLight: "bg-green-50",
-      primaryBorder: "border-green-200",
-      primaryText: "text-green-900",
-    },
-    purple: {
-      primary: "bg-purple-600",
-      primaryHover: "hover:bg-purple-700",
-      primaryLight: "bg-purple-50",
-      primaryBorder: "border-purple-200",
-      primaryText: "text-purple-900",
-    },
-    red: {
-      primary: "bg-red-600",
-      primaryHover: "hover:bg-red-700",
-      primaryLight: "bg-red-50",
-      primaryBorder: "border-red-200",
-      primaryText: "text-red-900",
-    },
-    orange: {
-      primary: "bg-orange-600",
-      primaryHover: "hover:bg-orange-700",
-      primaryLight: "bg-orange-50",
-      primaryBorder: "border-orange-200",
-      primaryText: "text-orange-900",
-    },
-    indigo: {
-      primary: "bg-indigo-600",
-      primaryHover: "hover:bg-indigo-700",
-      primaryLight: "bg-indigo-50",
-      primaryBorder: "border-indigo-200",
-      primaryText: "text-indigo-900",
-    },
-  };
-
-  return themes[theme as keyof typeof themes] || themes.blue;
-};
 
 export function DashboardLayout({
   children,
@@ -80,9 +31,85 @@ export function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Get user's theme
-  const userTheme = (user as any)?.theme || "blue";
-  const themeColors = getThemeColors(userTheme);
+  // Profile overlay state
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [returnUrl, setReturnUrl] = useState("/dashboard");
+
+  const openProfile = () => {
+    // Store the current URL as return URL
+    const currentUrl = pathname + window.location.search;
+    setReturnUrl(currentUrl);
+    setIsProfileOpen(true);
+  };
+
+  const closeProfile = () => {
+    setIsProfileOpen(false);
+    // Navigate back to the stored return URL if needed
+    if (returnUrl !== pathname + window.location.search) {
+      router.push(returnUrl);
+    }
+  };
+
+  // Get user's theme - with fallback
+  const userTheme = user?.theme || "blue";
+
+  // Simple theme classes - using template literals for dynamic classes
+  const getThemeClasses = (theme: string) => {
+    switch (theme) {
+      case "green":
+        return {
+          primary: "bg-green-600",
+          primaryHover: "hover:bg-green-700",
+          primaryLight: "bg-green-50",
+          primaryBorder: "border-green-200",
+          primaryText: "text-green-900",
+        };
+      case "purple":
+        return {
+          primary: "bg-purple-600",
+          primaryHover: "hover:bg-purple-700",
+          primaryLight: "bg-purple-50",
+          primaryBorder: "border-purple-200",
+          primaryText: "text-purple-900",
+        };
+      case "red":
+        return {
+          primary: "bg-red-600",
+          primaryHover: "hover:bg-red-700",
+          primaryLight: "bg-red-50",
+          primaryBorder: "border-red-200",
+          primaryText: "text-red-900",
+        };
+      case "orange":
+        return {
+          primary: "bg-orange-600",
+          primaryHover: "hover:bg-orange-700",
+          primaryLight: "bg-orange-50",
+          primaryBorder: "border-orange-200",
+          primaryText: "text-orange-900",
+        };
+      case "indigo":
+        return {
+          primary: "bg-indigo-600",
+          primaryHover: "hover:bg-indigo-700",
+          primaryLight: "bg-indigo-50",
+          primaryBorder: "border-indigo-200",
+          primaryText: "text-indigo-900",
+        };
+      default: // blue
+        return {
+          primary: "bg-blue-600",
+          primaryHover: "hover:bg-blue-700",
+          primaryLight: "bg-blue-50",
+          primaryBorder: "border-blue-200",
+          primaryText: "text-blue-900",
+        };
+    }
+  };
+
+  const themeClasses = getThemeClasses(userTheme);
+
+  console.log("Current user theme:", userTheme); // Debug log
 
   const handleLogout = async () => {
     try {
@@ -102,20 +129,33 @@ export function DashboardLayout({
   };
 
   const handleNewChat = async () => {
-    await createNewChat();
     setSidebarOpen(false);
-    // If we're on profile page, navigate to dashboard to show the new chat
-    if (pathname === "/profile") {
+    const newChatId = await createNewChat();
+
+    // Update URL after chat is created
+    if (newChatId) {
+      if (pathname === "/profile") {
+        router.push(`/dashboard?chat=${newChatId}`);
+      } else {
+        // Update URL to reflect the new chat
+        window.history.replaceState({}, "", `/dashboard?chat=${newChatId}`);
+      }
+    } else if (pathname === "/profile") {
       router.push("/dashboard");
     }
   };
 
   const handleSelectChat = async (chatId: string) => {
+    // First, select the chat
     await selectChat(chatId);
     setSidebarOpen(false);
-    // If we're on profile page, navigate to dashboard to show the selected chat
+
+    // Then update URL after chat is selected
     if (pathname === "/profile") {
-      router.push("/dashboard");
+      router.push(`/dashboard?chat=${chatId}`);
+    } else {
+      // Update URL to reflect the selected chat
+      window.history.replaceState({}, "", `/dashboard?chat=${chatId}`);
     }
   };
 
@@ -167,7 +207,7 @@ export function DashboardLayout({
           <p className="text-red-600 mb-4">Please log in to continue</p>
           <Link
             href="/auth/login"
-            className="text-blue-600 hover:text-blue-800"
+            className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
           >
             Go to Login
           </Link>
@@ -199,7 +239,7 @@ export function DashboardLayout({
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <div className="flex items-center space-x-3">
                 <div
-                  className={`w-8 h-8 ${themeColors.primary} rounded-lg flex items-center justify-center`}
+                  className={`w-8 h-8 ${themeClasses.primary} rounded-lg flex items-center justify-center`}
                 >
                   <span className="text-white font-bold text-sm">VU</span>
                 </div>
@@ -207,7 +247,9 @@ export function DashboardLayout({
                   <h1 className="text-lg font-semibold text-gray-900">
                     VU Assistant
                   </h1>
-                  <p className="text-sm text-gray-500">AI-Powered</p>
+                  <p className="text-sm text-gray-500">
+                    AI-Powered • {userTheme}
+                  </p>
                 </div>
               </div>
               {/* Close button for mobile */}
@@ -237,7 +279,7 @@ export function DashboardLayout({
               <button
                 onClick={handleNewChat}
                 disabled={isLoading}
-                className={`w-full ${themeColors.primary} text-white px-4 py-3 rounded-lg ${themeColors.primaryHover} transition-colors flex items-center justify-center space-x-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`w-full ${themeClasses.primary} text-white px-4 py-3 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <svg
                   className="w-5 h-5"
@@ -296,7 +338,7 @@ export function DashboardLayout({
                         key={chat.id}
                         className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                           activeChat?.id === chat.id
-                            ? `${themeColors.primaryLight} border ${themeColors.primaryBorder}`
+                            ? `${themeClasses.primaryLight} border ${themeClasses.primaryBorder}`
                             : "hover:bg-gray-50"
                         }`}
                         onClick={() => handleSelectChat(chat.id)}
@@ -305,7 +347,7 @@ export function DashboardLayout({
                           <p
                             className={`text-sm font-medium truncate ${
                               activeChat?.id === chat.id
-                                ? themeColors.primaryText
+                                ? themeClasses.primaryText
                                 : "text-gray-900"
                             }`}
                           >
@@ -345,10 +387,10 @@ export function DashboardLayout({
             <div className="border-t border-gray-200 p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <div
-                  className={`w-10 h-10 ${themeColors.primaryLight} rounded-full flex items-center justify-center`}
+                  className={`w-10 h-10 ${themeClasses.primaryLight} rounded-full flex items-center justify-center`}
                 >
                   <span
-                    className={`${themeColors.primaryText.replace("text-", "text-")} font-semibold text-sm`}
+                    className={`${themeClasses.primaryText} font-semibold text-sm`}
                   >
                     {user.fullName.charAt(0).toUpperCase()}
                   </span>
@@ -363,32 +405,31 @@ export function DashboardLayout({
 
               {/* Profile Actions */}
               <div className="space-y-1">
-                <Link href="/profile">
-                  <button
-                    className={`w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2 ${pathname === "/profile" ? "bg-gray-100" : ""}`}
+                <button
+                  onClick={openProfile}
+                  className={`w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2`}
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    <span>Profile Settings</span>
-                  </button>
-                </Link>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  <span>Profile Settings</span>
+                </button>
 
                 <button
                   onClick={handleLogout}
@@ -453,9 +494,9 @@ export function DashboardLayout({
 
                 {/* Header Actions */}
                 <div className="flex items-center space-x-4">
-                  {/* User theme indicator */}
+                  {/* Theme indicator */}
                   <div
-                    className={`w-3 h-3 ${themeColors.primary} rounded-full`}
+                    className={`w-4 h-4 ${themeClasses.primary} rounded-full`}
                     title={`Theme: ${userTheme}`}
                   ></div>
                 </div>
@@ -469,6 +510,13 @@ export function DashboardLayout({
           </main>
         </div>
       </div>
+
+      {/* Profile Overlay */}
+      <ProfileOverlay
+        isOpen={isProfileOpen}
+        onClose={closeProfile}
+        returnUrl={returnUrl}
+      />
     </div>
   );
 }

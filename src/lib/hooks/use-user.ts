@@ -33,12 +33,19 @@ export function useUser(): UseUserResult {
           setUser(data.data.user);
           setError(null);
         } else {
+          setUser(null);
           setError(data.message);
         }
+      } else if (response.status === 401) {
+        // Unauthorized - user is not logged in
+        setUser(null);
+        setError(null); // Don't treat this as an error
       } else {
+        setUser(null);
         setError("Failed to fetch user data");
       }
     } catch (err) {
+      setUser(null);
       setError("An error occurred while fetching user data");
       console.error("User fetch error:", err);
     }

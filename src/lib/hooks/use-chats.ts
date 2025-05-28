@@ -24,7 +24,7 @@ interface UseChatsResult {
   activeChat: ChatWithMessages | null;
   isLoading: boolean;
   error: string | null;
-  createNewChat: (initialMessage?: string) => Promise<void>;
+  createNewChat: (initialMessage?: string) => Promise<string | undefined>;
   selectChat: (chatId: string) => Promise<void>;
   deleteChat: (chatId: string) => Promise<void>;
   refreshChats: () => Promise<void>;
@@ -112,6 +112,9 @@ export function useChats(): UseChatsResult {
               }
             }, 500);
           }
+
+          // Return the new chat ID so it can be used for navigation
+          return newChat.id;
         } else {
           setError(data.message);
         }
@@ -129,6 +132,12 @@ export function useChats(): UseChatsResult {
   // Select a chat
   const selectChat = async (chatId: string) => {
     try {
+      // If chat is already selected, don't fetch again but still allow URL updates
+      if (activeChat?.id === chatId) {
+        console.log("Chat already selected, skipping API call");
+        return Promise.resolve(); // Return resolved promise for consistency
+      }
+
       await fetchChat(chatId);
     } catch (err) {
       console.error("Select chat error:", err);

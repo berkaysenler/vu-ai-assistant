@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { useChats } from "@/lib/hooks/use-chats";
@@ -18,8 +19,30 @@ export default function DashboardPage() {
   } = useChats();
 
   const { user } = useUser();
+  const searchParams = useSearchParams();
   const [quickMessage, setQuickMessage] = useState("");
   const [isQuickSending, setIsQuickSending] = useState(false);
+  // Handle chat selection from URL parameter (only when coming from other pages)
+  useEffect(() => {
+    const chatId = searchParams.get("chat");
+
+    if (chatId && chats.length > 0) {
+      // If there's a chat ID in URL, select it and then clean the URL
+      const chatExists = chats.find((chat) => chat.id === chatId);
+      if (chatExists && (!activeChat || activeChat.id !== chatId)) {
+        console.log("Selecting chat from URL:", chatId);
+        selectChat(chatId);
+        // Clean the URL after selecting the chat to prevent glitches
+        setTimeout(() => {
+          window.history.replaceState({}, "", "/dashboard");
+        }, 100);
+      } else if (!chatExists) {
+        // If the chat ID in URL doesn't exist, just clean the URL
+        window.history.replaceState({}, "", "/dashboard");
+      }
+    }
+    // Don't auto-select any chat if no URL parameter - let user see the dashboard home
+  }, [searchParams, chats, activeChat, selectChat]);
 
   // Get user's theme for styling
   const userTheme = (user as any)?.theme || "blue";

@@ -27,26 +27,64 @@ export async function middleware(request: NextRequest) {
   // Check if route is auth route
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  // If protected route and no token, redirect to login
-  if (isProtectedRoute && !token) {
-    console.log("Protected route without token, redirecting to login");
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+  // Handle auth routes first
+  if (isAuthRoute) {
+    if (token) {
+      // If there's a token, verify it
+      const payload = await verifyJWTEdge(token);
+      if (payload) {
+        // Valid token - redirect to dashboard
+        console.log("Valid token on auth route, redirecting to dashboard");
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      } else {
+        // Invalid token - clear it and allow access to auth route
+        console.log(
+          "Invalid token on auth route, clearing token and allowing access"
+        );
+        const response = NextResponse.next();
+        response.cookies.set("auth-token", "", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          maxAge: 0,
+          path: "/",
+        });
+        return response;
+      }
+    } else {
+      // No token - allow access to auth routes
+      return NextResponse.next();
+    }
   }
 
-  // If protected route, verify token
-  if (isProtectedRoute && token) {
+  // Handle protected routes
+  if (isProtectedRoute) {
+    if (!token) {
+      // No token - redirect to login
+      console.log("Protected route without token, redirecting to login");
+      return NextResponse.redirect(new URL("/auth/login", request.url));
+    }
+
+    // Verify token for protected routes
     const payload = await verifyJWTEdge(token);
     if (!payload) {
-      console.log("Invalid token, redirecting to login");
-      // Clear invalid token
+      console.log(
+        "Invalid token on protected route, clearing and redirecting to login"
+      );
       const response = NextResponse.redirect(
         new URL("/auth/login", request.url)
       );
-      response.cookies.delete("auth-token");
+      response.cookies.set("auth-token", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 0,
+        path: "/",
+      });
       return response;
     }
 
-    // Add user info to headers for the page to use
+    // Valid token - add user info to headers
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", payload.userId as string);
     requestHeaders.set("x-user-email", payload.email as string);
@@ -59,15 +97,7 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // If auth route and has valid token, redirect to dashboard
-  if (isAuthRoute && token) {
-    const payload = await verifyJWTEdge(token);
-    if (payload) {
-      console.log("Already logged in, redirecting to dashboard");
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-  }
-
+  // For all other routes, just continue
   return NextResponse.next();
 }
 
@@ -83,3 +113,29 @@ export const config = {
     "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };
+
+// export const config = {
+//   matcher: [
+//     /*
+//      * Match all request paths except for the ones starting with:
+//      * - api (API routes)
+//      * - _next/static (static files)
+//      * - _next/image (image optimization files)
+//      * - favicon.ico (favicon file)
+//      */
+//     "/((?!api|_next/static|_next/image|favicon.ico).*)",
+//   ],
+// };
+
+// export const config = {
+//   matcher: [
+//     /*
+//      * Match all request paths except for the ones starting with:
+//      * - api (API routes)
+//      * - _next/static (static files)
+//      * - _next/image (image optimization files)
+//      * - favicon.ico (favicon file)
+//      */
+//     "/((?!api|_next/static|_next/image|favicon.ico).*)",
+//   ],
+// };
