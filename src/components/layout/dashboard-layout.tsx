@@ -1,9 +1,11 @@
+// src/components/layout/dashboard-layout.tsx (UPDATED)
 "use client";
 
 import { useState, useEffect } from "react";
 import { useUser } from "@/lib/hooks/use-user";
 import { Chat, ChatWithMessages } from "@/lib/hooks/use-chats";
 import { useRouter, usePathname } from "next/navigation";
+import { GlobalSearch } from "@/components/search/global-search";
 import Link from "next/link";
 import { ProfileOverlay } from "../profile/profile-overlay";
 
@@ -15,6 +17,7 @@ interface DashboardLayoutProps {
   createNewChat: (initialMessage?: string) => Promise<string | undefined>;
   selectChat: (chatId: string) => Promise<void>;
   deleteChat: (chatId: string) => Promise<void>;
+  renameChat?: (chatId: string, newName: string) => Promise<void>;
 }
 
 export function DashboardLayout({
@@ -25,8 +28,10 @@ export function DashboardLayout({
   createNewChat,
   selectChat,
   deleteChat,
+  renameChat,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
@@ -109,8 +114,6 @@ export function DashboardLayout({
 
   const themeClasses = getThemeClasses(userTheme);
 
-  console.log("Current user theme:", userTheme); // Debug log
-
   const handleLogout = async () => {
     try {
       const response = await fetch("/api/auth/logout", {
@@ -164,6 +167,27 @@ export function DashboardLayout({
     if (confirm("Are you sure you want to delete this chat?")) {
       await deleteChat(chatId);
     }
+  };
+
+  const handleSearchResult = (chatId: string, messageId: string) => {
+    // Close global search
+    setShowGlobalSearch(false);
+
+    // Navigate to the chat and highlight the message
+    handleSelectChat(chatId);
+
+    // Scroll to message after a delay to ensure chat is loaded
+    setTimeout(() => {
+      const messageElement = document.getElementById(`message-${messageId}`);
+      if (messageElement) {
+        messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        // Briefly highlight the message
+        messageElement.classList.add("bg-yellow-100");
+        setTimeout(() => {
+          messageElement.classList.remove("bg-yellow-100");
+        }, 2000);
+      }
+    }, 1000);
   };
 
   const formatChatTime = (dateString: string) => {
@@ -227,10 +251,11 @@ export function DashboardLayout({
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75"></div>
         </div>
       )}
+
       <div className="flex overflow-hidden bg-white shadow-lg w-full max-w-7xl h-full rounded-lg">
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+          className={`fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
                ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
                lg:translate-x-0 lg:static lg:inset-0`}
         >
@@ -275,32 +300,70 @@ export function DashboardLayout({
 
             {/* Navigation Content */}
             <div className="flex-1 px-6 py-4 overflow-y-auto">
-              {/* New Chat Button */}
-              <button
-                onClick={handleNewChat}
-                disabled={isLoading}
-                className={`w-full ${themeClasses.primary} text-white px-4 py-3 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-2 mb-6 disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {/* Action Buttons */}
+              <div className="space-y-3 mb-6">
+                {/* New Chat Button */}
+                <button
+                  onClick={handleNewChat}
+                  disabled={isLoading}
+                  className={`w-full ${themeClasses.primary} text-white px-4 py-3 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  <span>{isLoading ? "Creating..." : "New Chat"}</span>
+                </button>
+
+                {/* Global Search Button */}
+                <button
+                  onClick={() => setShowGlobalSearch(!showGlobalSearch)}
+                  className={`w-full border border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2 ${
+                    showGlobalSearch
+                      ? `${themeClasses.primaryLight} ${themeClasses.primaryBorder}`
+                      : ""
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <span>Search All Chats</span>
+                </button>
+              </div>
+
+              {/* Global Search */}
+              {showGlobalSearch && (
+                <div className="mb-6">
+                  <GlobalSearch
+                    onSelectResult={handleSearchResult}
+                    className="w-full"
                   />
-                </svg>
-                <span>{isLoading ? "Creating..." : "New Chat"}</span>
-              </button>
+                </div>
+              )}
 
               {/* Chat Sessions List */}
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                  Chat Sessions
+                  Chat Sessions ({chats.length})
                 </h3>
 
                 {isLoading ? (
@@ -494,6 +557,31 @@ export function DashboardLayout({
 
                 {/* Header Actions */}
                 <div className="flex items-center space-x-4">
+                  {/* Global Search Toggle (Mobile) */}
+                  <button
+                    onClick={() => setShowGlobalSearch(!showGlobalSearch)}
+                    className={`lg:hidden p-2 rounded-lg transition-colors ${
+                      showGlobalSearch
+                        ? `${themeClasses.primary} text-white`
+                        : "hover:bg-gray-100 text-gray-600"
+                    }`}
+                    title="Global search"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </button>
+
                   {/* Theme indicator */}
                   <div
                     className={`w-4 h-4 ${themeClasses.primary} rounded-full`}
@@ -501,6 +589,19 @@ export function DashboardLayout({
                   ></div>
                 </div>
               </div>
+
+              {/* Mobile Global Search */}
+              {showGlobalSearch && (
+                <div className="lg:hidden pb-4">
+                  <GlobalSearch
+                    onSelectResult={(chatId, messageId) => {
+                      handleSearchResult(chatId, messageId);
+                      setSidebarOpen(false);
+                    }}
+                    className="w-full"
+                  />
+                </div>
+              )}
             </div>
           </header>
 

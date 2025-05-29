@@ -1,3 +1,4 @@
+// src/lib/hooks/use-chats.ts (UPDATED - REPLACE YOUR EXISTING FILE)
 import { useState, useEffect } from "react";
 
 export interface Chat {
@@ -27,8 +28,11 @@ interface UseChatsResult {
   createNewChat: (initialMessage?: string) => Promise<string | undefined>;
   selectChat: (chatId: string) => Promise<void>;
   deleteChat: (chatId: string) => Promise<void>;
+  renameChat: (chatId: string, newName: string) => Promise<void>;
   refreshChats: () => Promise<void>;
   sendMessage: (message: string) => Promise<void>;
+  editMessage: (messageId: string, newContent: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
 }
 
 export function useChats(): UseChatsResult {
@@ -169,6 +173,60 @@ export function useChats(): UseChatsResult {
     }
   };
 
+  // Rename a chat
+  const renameChat = async (chatId: string, newName: string) => {
+    try {
+      const response = await fetch(`/api/chats/${chatId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ name: newName }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          const updatedChat = data.data.chat;
+
+          // Update in chats list
+          setChats((prev) =>
+            prev.map((chat) =>
+              chat.id === chatId
+                ? {
+                    ...chat,
+                    name: updatedChat.name,
+                    updatedAt: updatedChat.updatedAt,
+                  }
+                : chat
+            )
+          );
+
+          // Update active chat if it's the one we renamed
+          if (activeChat?.id === chatId) {
+            setActiveChat((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    name: updatedChat.name,
+                    updatedAt: updatedChat.updatedAt,
+                  }
+                : null
+            );
+          }
+        } else {
+          setError(data.message);
+        }
+      } else {
+        setError("Failed to rename chat");
+      }
+    } catch (err) {
+      setError("An error occurred while renaming chat");
+      console.error("Rename chat error:", err);
+    }
+  };
+
   // Send message to active chat
   const sendMessage = async (message: string) => {
     if (!activeChat) {
@@ -230,6 +288,101 @@ export function useChats(): UseChatsResult {
     }
   };
 
+  // Edit a message
+  const editMessage = async (messageId: string, newContent: string) => {
+    if (!activeChat) {
+      setError("No active chat selected");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/chats/${activeChat.id}/messages/${messageId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ content: newContent }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          const updatedMessage = data.data.message;
+
+          // Update the message in active chat
+          setActiveChat((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  messages: prev.messages.map((msg) =>
+                    msg.id === messageId
+                      ? {
+                          ...msg,
+                          content: updatedMessage.content,
+                          updatedAt: updatedMessage.updatedAt,
+                        }
+                      : msg
+                  ),
+                }
+              : null
+          );
+
+          // Refresh chats list to update timestamp
+          await fetchChats();
+        } else {
+          setError(data.message);
+        }
+      } else {
+        setError("Failed to edit message");
+      }
+    } catch (err) {
+      setError("An error occurred while editing message");
+      console.error("Edit message error:", err);
+    }
+  };
+
+  // Delete a message
+  const deleteMessage = async (messageId: string) => {
+    if (!activeChat) {
+      setError("No active chat selected");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/chats/${activeChat.id}/messages/${messageId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        // Remove the message from active chat
+        setActiveChat((prev) =>
+          prev
+            ? {
+                ...prev,
+                messages: prev.messages.filter((msg) => msg.id !== messageId),
+              }
+            : null
+        );
+
+        // Refresh chats list to update timestamp
+        await fetchChats();
+      } else {
+        setError("Failed to delete message");
+      }
+    } catch (err) {
+      setError("An error occurred while deleting message");
+      console.error("Delete message error:", err);
+    }
+  };
+
   // Refresh chats list
   const refreshChats = async () => {
     setIsLoading(true);
@@ -255,7 +408,10 @@ export function useChats(): UseChatsResult {
     createNewChat,
     selectChat,
     deleteChat,
+    renameChat,
     refreshChats,
     sendMessage,
+    editMessage,
+    deleteMessage,
   };
 }

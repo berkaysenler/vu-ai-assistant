@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx (UPDATED - REPLACE YOUR EXISTING FILE)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,13 +16,17 @@ export default function DashboardPage() {
     createNewChat,
     selectChat,
     deleteChat,
+    renameChat,
     sendMessage,
+    editMessage,
+    deleteMessage,
   } = useChats();
 
   const { user } = useUser();
   const searchParams = useSearchParams();
   const [quickMessage, setQuickMessage] = useState("");
   const [isQuickSending, setIsQuickSending] = useState(false);
+
   // Handle chat selection from URL parameter (only when coming from other pages)
   useEffect(() => {
     const chatId = searchParams.get("chat");
@@ -92,6 +97,17 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRenameChat = async (newName: string) => {
+    if (activeChat && renameChat) {
+      await renameChat(activeChat.id, newName);
+    }
+  };
+
+  const handleSearchInChat = (query: string) => {
+    // This could be enhanced to scroll to matching messages
+    console.log("Searching in chat:", query);
+  };
+
   return (
     <DashboardLayout
       chats={chats}
@@ -100,10 +116,18 @@ export default function DashboardPage() {
       createNewChat={createNewChat}
       selectChat={selectChat}
       deleteChat={deleteChat}
+      renameChat={renameChat}
     >
       {activeChat ? (
         <div className="h-full">
-          <ChatInterface chat={activeChat} onSendMessage={sendMessage} />
+          <ChatInterface
+            chat={activeChat}
+            onSendMessage={sendMessage}
+            onEditMessage={editMessage}
+            onDeleteMessage={deleteMessage}
+            onRenameChat={handleRenameChat}
+            onSearchInChat={handleSearchInChat}
+          />
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-4xl mx-auto">
@@ -130,6 +154,85 @@ export default function DashboardPage() {
             </p>
           </div>
 
+          {/* Enhanced Features Highlight */}
+          <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              ✨ New Features Available
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="flex items-start space-x-2">
+                <svg
+                  className="w-5 h-5 text-green-600 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span className="text-gray-700">
+                  Edit and delete your messages
+                </span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <svg
+                  className="w-5 h-5 text-green-600 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span className="text-gray-700">Rename your chat sessions</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <svg
+                  className="w-5 h-5 text-green-600 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span className="text-gray-700">
+                  Search within individual chats
+                </span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <svg
+                  className="w-5 h-5 text-green-600 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span className="text-gray-700">
+                  Global search across all chats
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Start Chat */}
           <div className="w-full max-w-2xl mb-8">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
@@ -145,6 +248,7 @@ export default function DashboardPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base"
                     rows={3}
                     disabled={isQuickSending}
+                    maxLength={500}
                   />
                   <div className="absolute bottom-2 right-2 text-xs text-gray-400">
                     {quickMessage.length}/500
@@ -254,6 +358,9 @@ export default function DashboardPage() {
               <p className="text-sm">
                 You have {chats.length} chat{chats.length !== 1 ? "s" : ""} in
                 your history
+              </p>
+              <p className="text-xs mt-1">
+                Use the global search to find messages across all your chats
               </p>
             </div>
           )}
