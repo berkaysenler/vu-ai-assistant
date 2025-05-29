@@ -1,11 +1,10 @@
-// src/components/chat/chat-interface.tsx (UPDATED)
+// src/components/chat/chat-interface.tsx (UPDATED - Better UX)
 "use client";
 
 import { useState, useRef, useEffect } from "react";
 import { ChatWithMessages, Message } from "@/lib/hooks/use-chats";
 import { useUser } from "@/lib/hooks/use-user";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
-import { TextInputModal } from "@/components/ui/text-input-modal";
 
 interface ChatInterfaceProps {
   chat: ChatWithMessages;
@@ -30,11 +29,11 @@ export function ChatInterface({
   const [editingContent, setEditingContent] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [showRenameModal, setShowRenameModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState<Message | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useUser();
 
   // Get user's theme
@@ -100,6 +99,13 @@ export function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat.messages]);
 
+  // Focus search input when search is opened
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showSearch]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -128,6 +134,7 @@ export function ChatInterface({
       await onEditMessage(messageId, newContent);
       setEditingMessage(null);
       setEditingContent("");
+      // TODO: Regenerate AI response when AI is implemented
     } catch (error) {
       console.error("Error editing message:", error);
     } finally {
@@ -144,20 +151,6 @@ export function ChatInterface({
       setShowDeleteModal(null);
     } catch (error) {
       console.error("Error deleting message:", error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleRenameChat = async (newName: string) => {
-    if (!onRenameChat) return;
-
-    setIsProcessing(true);
-    try {
-      await onRenameChat(newName);
-      setShowRenameModal(false);
-    } catch (error) {
-      console.error("Error renaming chat:", error);
     } finally {
       setIsProcessing(false);
     }
@@ -217,10 +210,11 @@ export function ChatInterface({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header with Actions */}
-      <div className="border-b border-gray-200 p-4 bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
+      {/* Fixed Header with Search */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        {/* Main Header */}
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold text-gray-900 truncate">
               {chat.name}
             </h2>
@@ -232,7 +226,7 @@ export function ChatInterface({
           </div>
 
           {/* Header Actions */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 ml-4">
             {/* Search Toggle */}
             <button
               onClick={() => {
@@ -262,37 +256,15 @@ export function ChatInterface({
                 />
               </svg>
             </button>
-
-            {/* Rename Chat */}
-            {onRenameChat && (
-              <button
-                onClick={() => setShowRenameModal(true)}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
-                title="Rename chat"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </button>
-            )}
           </div>
         </div>
 
         {/* Search Bar */}
         {showSearch && (
-          <div className="mt-3">
+          <div className="px-4 pb-3 border-t border-gray-100">
             <div className="relative">
               <input
+                ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => {
@@ -301,8 +273,8 @@ export function ChatInterface({
                     onSearchInChat(e.target.value);
                   }
                 }}
-                placeholder="Search messages..."
-                className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors ${themeClasses.focus}`}
+                placeholder="Search messages in this chat..."
+                className={`w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors ${themeClasses.focus}`}
               />
               <svg
                 className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
@@ -317,7 +289,34 @@ export function ChatInterface({
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
             </div>
+            {searchQuery && (
+              <p className="text-xs text-gray-500 mt-2">
+                Found {filteredMessages.length} message
+                {filteredMessages.length !== 1 ? "s" : ""} matching "
+                {searchQuery}"
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -342,6 +341,12 @@ export function ChatInterface({
                   />
                 </svg>
                 <p>No messages found matching "{searchQuery}"</p>
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="text-blue-600 hover:text-blue-500 text-sm mt-2"
+                >
+                  Clear search
+                </button>
               </div>
             ) : (
               <p>No messages yet. Start the conversation!</p>
@@ -488,7 +493,7 @@ export function ChatInterface({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 p-4">
+      <div className="border-t border-gray-200 p-4 bg-white">
         <form onSubmit={handleSubmit} className="flex space-x-4">
           <div className="flex-1">
             <textarea
@@ -533,26 +538,6 @@ export function ChatInterface({
           <span>{message.length}/500</span>
         </div>
       </div>
-
-      {/* Rename Chat Modal */}
-      <TextInputModal
-        isOpen={showRenameModal}
-        onClose={() => setShowRenameModal(false)}
-        onSubmit={handleRenameChat}
-        title="Rename Chat"
-        description="Enter a new name for this chat session"
-        placeholder="Enter chat name..."
-        initialValue={chat.name}
-        submitText="Rename"
-        maxLength={100}
-        isLoading={isProcessing}
-        validation={(value) => {
-          if (value.length < 2)
-            return "Chat name must be at least 2 characters";
-          if (value === chat.name) return "Please enter a different name";
-          return null;
-        }}
-      />
 
       {/* Delete Message Modal */}
       <ConfirmationModal

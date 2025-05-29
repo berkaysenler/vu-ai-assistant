@@ -1,4 +1,4 @@
-// src/components/layout/dashboard-layout.tsx (UPDATED)
+// src/components/layout/dashboard-layout.tsx (UPDATED - Better UX)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { GlobalSearch } from "@/components/search/global-search";
 import Link from "next/link";
 import { ProfileOverlay } from "../profile/profile-overlay";
+import { TextInputModal } from "@/components/ui/text-input-modal";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -32,6 +33,8 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+  const [renamingChat, setRenamingChat] = useState<Chat | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
@@ -166,6 +169,20 @@ export function DashboardLayout({
     e?.stopPropagation();
     if (confirm("Are you sure you want to delete this chat?")) {
       await deleteChat(chatId);
+    }
+  };
+
+  const handleRenameChat = async (newName: string) => {
+    if (!renameChat || !renamingChat) return;
+
+    setIsRenaming(true);
+    try {
+      await renameChat(renamingChat.id, newName);
+      setRenamingChat(null);
+    } catch (error) {
+      console.error("Error renaming chat:", error);
+    } finally {
+      setIsRenaming(false);
     }
   };
 
@@ -420,25 +437,56 @@ export function DashboardLayout({
                             {formatChatTime(chat.updatedAt)}
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => handleDeleteChat(chat.id, e)}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400 hover:text-red-600 transition-all"
-                          title="Delete chat"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+
+                        {/* Chat Actions */}
+                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Rename Button */}
+                          {renameChat && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRenamingChat(chat);
+                              }}
+                              className="p-1 rounded text-gray-400 hover:text-blue-600 transition-colors"
+                              title="Rename chat"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                />
+                              </svg>
+                            </button>
+                          )}
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={(e) => handleDeleteChat(chat.id, e)}
+                            className="p-1 rounded text-gray-400 hover:text-red-600 transition-colors"
+                            title="Delete chat"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -617,6 +665,27 @@ export function DashboardLayout({
         isOpen={isProfileOpen}
         onClose={closeProfile}
         returnUrl={returnUrl}
+      />
+
+      {/* Rename Chat Modal */}
+      <TextInputModal
+        isOpen={!!renamingChat}
+        onClose={() => setRenamingChat(null)}
+        onSubmit={handleRenameChat}
+        title="Rename Chat"
+        description="Enter a new name for this chat session"
+        placeholder="Enter chat name..."
+        initialValue={renamingChat?.name || ""}
+        submitText="Rename"
+        maxLength={100}
+        isLoading={isRenaming}
+        validation={(value) => {
+          if (value.length < 2)
+            return "Chat name must be at least 2 characters";
+          if (value === renamingChat?.name)
+            return "Please enter a different name";
+          return null;
+        }}
       />
     </div>
   );

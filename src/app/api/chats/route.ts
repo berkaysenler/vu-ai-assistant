@@ -1,7 +1,9 @@
+// src/app/api/chats/route.ts (UPDATED with AI Welcome Message)
 import { NextRequest } from "next/server";
 import { Pool } from "pg";
 import { verifyJWT } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/response";
+import { getWelcomeMessage } from "@/lib/services/ai-service";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -26,16 +28,14 @@ export async function GET(request: NextRequest) {
     try {
       // Get user's chats ordered by most recent
       const chatsResult = await client.query(
-        `
-        SELECT 
+        `SELECT 
           id, 
           name, 
           "createdAt", 
           "updatedAt"
         FROM chats 
         WHERE "userId" = $1 
-        ORDER BY "updatedAt" DESC
-      `,
+        ORDER BY "updatedAt" DESC`,
         [payload.userId]
       );
 
@@ -70,30 +70,36 @@ export async function POST(request: NextRequest) {
     try {
       // Create new chat with default name
       const chatResult = await client.query(
-        `
-        INSERT INTO chats (id, "userId", name, "createdAt", "updatedAt") 
-        VALUES (gen_random_uuid(), $1, $2, NOW(), NOW()) 
-        RETURNING id, name, "createdAt", "updatedAt"
-      `,
+        `INSERT INTO chats (id, "userId", name, "createdAt", "updatedAt") 
+         VALUES (gen_random_uuid(), $1, $2, NOW(), NOW()) 
+         RETURNING id, name, "createdAt", "updatedAt"`,
         [payload.userId, "New Chat"]
       );
 
       const newChat = chatResult.rows[0];
 
-      // Create a welcome message from the AI
+      // Create an AI-generated welcome message
+      let welcomeMessage: string;
+      try {
+        welcomeMessage = getWelcomeMessage();
+        console.log("Generated AI welcome message for new chat");
+      } catch (error) {
+        console.error(
+          "Failed to generate AI welcome message, using fallback:",
+          error
+        );
+        welcomeMessage =
+          "Hello! I'm your Victoria University Assistant. I'm here to help you with questions about courses, enrollment, campus facilities, academic policies, and more. How can I assist you today?";
+      }
+
+      // Save the welcome message
       await client.query(
-        `
-        INSERT INTO messages (id, "chatId", content, role, "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
-      `,
-        [
-          newChat.id,
-          "Hello! I'm your Victoria University Assistant. I'm here to help you with questions about courses, enrollment, campus facilities, academic policies, and more. How can I assist you today?",
-          "ASSISTANT",
-        ]
+        `INSERT INTO messages (id, "chatId", content, role, "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())`,
+        [newChat.id, welcomeMessage, "ASSISTANT"]
       );
 
-      console.log("New chat created:", newChat.id);
+      console.log("New chat created with AI welcome message:", newChat.id);
 
       return successResponse("Chat created successfully", {
         chat: newChat,
