@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx (UPDATED - REPLACE YOUR EXISTING FILE)
+// src/app/dashboard/page.tsx (UPDATED with theme integration and new chat interface)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,6 +7,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { useChats } from "@/lib/hooks/use-chats";
 import { useUser } from "@/lib/hooks/use-user";
+import { useTheme } from "@/lib/context/theme-context";
 
 export default function DashboardPage() {
   const {
@@ -23,60 +24,31 @@ export default function DashboardPage() {
   } = useChats();
 
   const { user } = useUser();
+  const { getThemeClasses } = useTheme();
   const searchParams = useSearchParams();
   const [quickMessage, setQuickMessage] = useState("");
   const [isQuickSending, setIsQuickSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Handle chat selection from URL parameter (only when coming from other pages)
+  const themeClasses = getThemeClasses();
+
+  // Handle chat selection from URL parameter
   useEffect(() => {
     const chatId = searchParams.get("chat");
 
     if (chatId && chats.length > 0) {
-      // If there's a chat ID in URL, select it and then clean the URL
       const chatExists = chats.find((chat) => chat.id === chatId);
       if (chatExists && (!activeChat || activeChat.id !== chatId)) {
         console.log("Selecting chat from URL:", chatId);
         selectChat(chatId);
-        // Clean the URL after selecting the chat to prevent glitches
         setTimeout(() => {
           window.history.replaceState({}, "", "/dashboard");
         }, 100);
       } else if (!chatExists) {
-        // If the chat ID in URL doesn't exist, just clean the URL
         window.history.replaceState({}, "", "/dashboard");
       }
     }
-    // Don't auto-select any chat if no URL parameter - let user see the dashboard home
   }, [searchParams, chats, activeChat, selectChat]);
-
-  // Get user's theme for styling
-  const userTheme = (user as any)?.theme || "blue";
-  const getThemeClasses = (theme: string) => {
-    switch (theme) {
-      case "green":
-        return { primary: "bg-green-600", primaryHover: "hover:bg-green-700" };
-      case "purple":
-        return {
-          primary: "bg-purple-600",
-          primaryHover: "hover:bg-purple-700",
-        };
-      case "red":
-        return { primary: "bg-red-600", primaryHover: "hover:bg-red-700" };
-      case "orange":
-        return {
-          primary: "bg-orange-600",
-          primaryHover: "hover:bg-orange-700",
-        };
-      case "indigo":
-        return {
-          primary: "bg-indigo-600",
-          primaryHover: "hover:bg-indigo-700",
-        };
-      default:
-        return { primary: "bg-blue-600", primaryHover: "hover:bg-blue-700" };
-    }
-  };
-  const themeClasses = getThemeClasses(userTheme);
 
   const handleQuickStart = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,11 +59,10 @@ export default function DashboardPage() {
     setIsQuickSending(true);
 
     try {
-      // Create new chat with the initial message
       await createNewChat(messageToSend);
     } catch (error) {
       console.error("Quick start error:", error);
-      setQuickMessage(messageToSend); // Restore message on error
+      setQuickMessage(messageToSend);
     } finally {
       setIsQuickSending(false);
     }
@@ -104,9 +75,15 @@ export default function DashboardPage() {
   };
 
   const handleSearchInChat = (query: string) => {
-    // This could be enhanced to scroll to matching messages
-    console.log("Searching in chat:", query);
+    setSearchQuery(query);
   };
+
+  // Filter messages for search
+  const filteredMessages = activeChat?.messages?.filter((msg) =>
+    searchQuery.trim()
+      ? msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+      : true
+  );
 
   return (
     <DashboardLayout
@@ -117,37 +94,46 @@ export default function DashboardPage() {
       selectChat={selectChat}
       deleteChat={deleteChat}
       renameChat={renameChat}
+      onSendMessage={sendMessage}
+      onEditMessage={editMessage}
+      onDeleteMessage={deleteMessage}
+      onRenameChat={handleRenameChat}
+      onSearchInChat={handleSearchInChat}
     >
       {activeChat ? (
-        <div className="h-full">
-          <ChatInterface
-            chat={activeChat}
-            onSendMessage={sendMessage}
-            onEditMessage={editMessage}
-            onDeleteMessage={deleteMessage}
-            onRenameChat={handleRenameChat}
-            onSearchInChat={handleSearchInChat}
-          />
-        </div>
+        <ChatInterface
+          chat={activeChat}
+          onSendMessage={sendMessage}
+          onEditMessage={editMessage}
+          onDeleteMessage={deleteMessage}
+          onRenameChat={handleRenameChat}
+          onSearchInChat={handleSearchInChat}
+          searchQuery={searchQuery}
+          filteredMessages={filteredMessages}
+        />
       ) : (
-        <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-4xl mx-auto">
+        <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-4xl mx-auto px-4">
           {/* Welcome Section */}
           <div className="mb-8">
             <div
               className={`w-24 h-24 ${themeClasses.primary} rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg`}
             >
-              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+              <div
+                className={`w-12 h-12 ${themeClasses.background} rounded-lg flex items-center justify-center`}
+              >
                 <span
-                  className={`${themeClasses.primary.replace("bg-", "text-")} font-bold text-lg`}
+                  className={`${themeClasses.primaryText} font-bold text-lg`}
                 >
                   VU
                 </span>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            <h2 className={`text-3xl font-bold ${themeClasses.text} mb-3`}>
               Welcome to Victoria University Assistant
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-lg leading-relaxed">
+            <p
+              className={`${themeClasses.textSecondary} max-w-2xl mx-auto text-lg leading-relaxed`}
+            >
               Your AI-powered guide for all questions related to Victoria
               University. Ask about courses, enrollment, campus facilities,
               academic policies, and more.
@@ -155,88 +141,45 @@ export default function DashboardPage() {
           </div>
 
           {/* Enhanced Features Highlight */}
-          <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+          <div
+            className={`mb-8 p-6 ${themeClasses.primaryLight} rounded-xl ${themeClasses.primaryBorder} border`}
+          >
+            <h3 className={`text-lg font-semibold ${themeClasses.text} mb-3`}>
               ✨ New Features Available
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-start space-x-2">
-                <svg
-                  className="w-5 h-5 text-green-600 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span className="text-gray-700">
-                  Edit and delete your messages
-                </span>
-              </div>
-              <div className="flex items-start space-x-2">
-                <svg
-                  className="w-5 h-5 text-green-600 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span className="text-gray-700">Rename your chat sessions</span>
-              </div>
-              <div className="flex items-start space-x-2">
-                <svg
-                  className="w-5 h-5 text-green-600 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span className="text-gray-700">
-                  Search within individual chats
-                </span>
-              </div>
-              <div className="flex items-start space-x-2">
-                <svg
-                  className="w-5 h-5 text-green-600 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span className="text-gray-700">
-                  Global search across all chats
-                </span>
-              </div>
+              {[
+                "Edit and delete your messages",
+                "Rename your chat sessions",
+                "Search within individual chats",
+                "Global search across all chats",
+              ].map((feature, index) => (
+                <div key={index} className="flex items-start space-x-2">
+                  <svg
+                    className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span className={themeClasses.textSecondary}>{feature}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Quick Start Chat */}
           <div className="w-full max-w-2xl mb-8">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+            <div className={`${themeClasses.card} rounded-xl shadow-lg p-6`}>
+              <h3
+                className={`text-lg font-semibold ${themeClasses.text} mb-4 text-center`}
+              >
                 Start a conversation
               </h3>
               <form onSubmit={handleQuickStart} className="space-y-4">
@@ -245,12 +188,14 @@ export default function DashboardPage() {
                     value={quickMessage}
                     onChange={(e) => setQuickMessage(e.target.value)}
                     placeholder="Ask me anything about Victoria University..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base"
+                    className={`w-full px-4 py-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none text-base placeholder:${themeClasses.textMuted}`}
                     rows={3}
                     disabled={isQuickSending}
                     maxLength={500}
                   />
-                  <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                  <div
+                    className={`absolute bottom-2 right-2 text-xs ${themeClasses.textMuted}`}
+                  >
                     {quickMessage.length}/500
                   </div>
                 </div>
@@ -319,13 +264,12 @@ export default function DashboardPage() {
                 key={index}
                 onClick={() => {
                   setQuickMessage(action.message);
-                  // Auto focus the textarea
                   setTimeout(() => {
                     const textarea = document.querySelector("textarea");
                     textarea?.focus();
                   }, 100);
                 }}
-                className="bg-white p-6 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all text-left group"
+                className={`${themeClasses.card} p-6 rounded-lg ${themeClasses.cardHover} transition-all text-left group`}
               >
                 <div
                   className={`w-12 h-12 ${themeClasses.primary} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
@@ -344,17 +288,19 @@ export default function DashboardPage() {
                     />
                   </svg>
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-2">
+                <h4 className={`font-semibold ${themeClasses.text} mb-2`}>
                   {action.title}
                 </h4>
-                <p className="text-sm text-gray-600">{action.description}</p>
+                <p className={`text-sm ${themeClasses.textSecondary}`}>
+                  {action.description}
+                </p>
               </button>
             ))}
           </div>
 
           {/* Stats Section */}
           {chats.length > 0 && (
-            <div className="text-center text-gray-500">
+            <div className={`text-center ${themeClasses.textMuted}`}>
               <p className="text-sm">
                 You have {chats.length} chat{chats.length !== 1 ? "s" : ""} in
                 your history

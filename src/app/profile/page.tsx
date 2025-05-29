@@ -1,3 +1,4 @@
+// src/app/profile/page.tsx (UPDATED - Dark mode compatible)
 "use client";
 
 import { useState } from "react";
@@ -5,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { ProfileSettingsForm } from "@/components/profile/profile-settings-form";
 import { useChats } from "@/lib/hooks/use-chats";
+import { useTheme } from "@/lib/context/theme-context";
 
 export default function ProfilePage() {
   const {
@@ -16,9 +18,12 @@ export default function ProfilePage() {
     deleteChat,
   } = useChats();
 
+  const { getThemeClasses } = useTheme();
   const router = useRouter();
   const [isDeletingChats, setIsDeletingChats] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const themeClasses = getThemeClasses();
 
   const handleDeleteAllChats = async () => {
     if (
@@ -115,9 +120,11 @@ export default function ProfilePage() {
     >
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="border-b border-gray-200 pb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-          <p className="mt-1 text-sm text-gray-600">
+        <div className={`${themeClasses.borderLight} border-b pb-4`}>
+          <h1 className={`text-2xl font-bold ${themeClasses.text}`}>
+            Profile Settings
+          </h1>
+          <p className={`mt-1 text-sm ${themeClasses.textMuted}`}>
             Manage your account settings and preferences
           </p>
         </div>
@@ -125,39 +132,53 @@ export default function ProfilePage() {
         {/* Profile Settings Form */}
         <ProfileSettingsForm />
 
-        {/* Account Information */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+        {/* Account Information Card */}
+        <div className={`${themeClasses.card} p-6 rounded-lg border`}>
+          <h3 className={`text-lg font-medium ${themeClasses.text} mb-4`}>
             Account Information
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
             <div>
-              <dt className="font-medium text-gray-500">Account Status</dt>
-              <dd className="mt-1 text-gray-900">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <dt className={`font-medium ${themeClasses.textMuted}`}>
+                Account Status
+              </dt>
+              <dd className="mt-1">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${themeClasses.successLight}`}
+                >
                   Verified
                 </span>
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-gray-500">Member Since</dt>
-              <dd className="mt-1 text-gray-900">March 2025</dd>
+              <dt className={`font-medium ${themeClasses.textMuted}`}>
+                Member Since
+              </dt>
+              <dd className={`mt-1 ${themeClasses.text}`}>March 2025</dd>
             </div>
             <div>
-              <dt className="font-medium text-gray-500">Last Login</dt>
-              <dd className="mt-1 text-gray-900">Today</dd>
+              <dt className={`font-medium ${themeClasses.textMuted}`}>
+                Last Login
+              </dt>
+              <dd className={`mt-1 ${themeClasses.text}`}>Today</dd>
             </div>
             <div>
-              <dt className="font-medium text-gray-500">Total Chats</dt>
-              <dd className="mt-1 text-gray-900">{chats.length}</dd>
+              <dt className={`font-medium ${themeClasses.textMuted}`}>
+                Total Chats
+              </dt>
+              <dd className={`mt-1 ${themeClasses.text}`}>{chats.length}</dd>
             </div>
           </div>
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-white p-6 rounded-lg border border-red-200">
-          <h3 className="text-lg font-medium text-red-900 mb-2">Danger Zone</h3>
-          <p className="text-sm text-gray-600 mb-4">
+        <div
+          className={`${themeClasses.background} p-6 rounded-lg border-2 border-red-200 dark:border-red-800/50`}
+        >
+          <h3 className={`text-lg font-medium ${themeClasses.error} mb-2`}>
+            Danger Zone
+          </h3>
+          <p className={`text-sm ${themeClasses.textMuted} mb-4`}>
             These actions are permanent and cannot be undone.
           </p>
 
@@ -165,7 +186,7 @@ export default function ProfilePage() {
             <button
               onClick={handleDeleteAllChats}
               disabled={isDeletingChats || chats.length === 0}
-              className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isDeletingChats
                 ? "Deleting..."
@@ -175,7 +196,7 @@ export default function ProfilePage() {
             <button
               onClick={handleDeleteAccount}
               disabled={isDeletingAccount}
-              className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isDeletingAccount ? "Deleting Account..." : "Delete Account"}
             </button>

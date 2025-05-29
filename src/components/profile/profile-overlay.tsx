@@ -1,7 +1,8 @@
-// src/components/profile/profile-overlay.tsx
+// src/components/profile/profile-overlay.tsx (UPDATED - Dark mode compatible)
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTheme } from "@/lib/context/theme-context";
 import { ProfileSettingsForm } from "./profile-settings-form";
 
 interface ProfileOverlayProps {
@@ -16,6 +17,8 @@ export function ProfileOverlay({
   returnUrl,
 }: ProfileOverlayProps) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const { getThemeClasses, isDark } = useTheme();
+  const themeClasses = getThemeClasses();
 
   useEffect(() => {
     if (isOpen) {
@@ -51,15 +54,13 @@ export function ProfileOverlay({
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
-        isAnimating
-          ? "bg-black bg-opacity-50 backdrop-blur-sm"
-          : "bg-transparent"
+        isAnimating ? "bg-black/50 backdrop-blur-sm" : "bg-transparent"
       }`}
       onClick={handleBackdropClick}
     >
       {/* Overlay Content */}
       <div
-        className={`w-full max-w-4xl bg-white rounded-2xl shadow-2xl transform transition-all duration-300 ease-out ${
+        className={`w-full max-w-4xl ${themeClasses.background} rounded-2xl shadow-2xl transform transition-all duration-300 ease-out ${
           isAnimating
             ? "scale-100 opacity-100 translate-y-0"
             : "scale-95 opacity-0 translate-y-4"
@@ -67,27 +68,34 @@ export function ProfileOverlay({
         style={{
           maxHeight: "90vh",
           minHeight: "60vh",
+          // Ensure solid background in dark mode
+          backgroundColor: isDark ? "rgb(17, 24, 39)" : "white",
+          boxShadow: isDark
+            ? "0 25px 50px -12px rgba(0, 0, 0, 0.7)"
+            : "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
         }}
       >
         {/* Header with Close Button */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div
+          className={`flex items-center justify-between p-6 ${themeClasses.borderLight} border-b`}
+        >
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className={`text-2xl font-bold ${themeClasses.text}`}>
               Profile Settings
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className={`text-sm ${themeClasses.textMuted} mt-1`}>
               Manage your account settings and preferences
             </p>
           </div>
 
-          {/* Discord-style X button */}
+          {/* Enhanced Close Button */}
           <button
             onClick={handleClose}
-            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors group"
+            className={`p-2 rounded-full ${themeClasses.hover} transition-colors group`}
             title="Close profile settings"
           >
             <svg
-              className="w-6 h-6 text-gray-600 group-hover:text-gray-800 transition-colors"
+              className={`w-6 h-6 ${themeClasses.textMuted} group-hover:${themeClasses.text} transition-colors`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -104,7 +112,7 @@ export function ProfileOverlay({
 
         {/* Scrollable Content */}
         <div
-          className="overflow-y-auto"
+          className={`overflow-y-auto ${themeClasses.background}`}
           style={{ maxHeight: "calc(90vh - 100px)" }}
         >
           <div className="p-6">

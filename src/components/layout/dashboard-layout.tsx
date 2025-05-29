@@ -1,4 +1,4 @@
-// src/components/layout/dashboard-layout.tsx (UPDATED - Better UX)
+// src/components/layout/dashboard-layout.tsx (IMPROVED - Better dark mode sidebar & single search)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,6 +9,8 @@ import { GlobalSearch } from "@/components/search/global-search";
 import Link from "next/link";
 import { ProfileOverlay } from "../profile/profile-overlay";
 import { TextInputModal } from "@/components/ui/text-input-modal";
+import { useTheme } from "@/lib/context/theme-context";
+import { ThemeSelector } from "@/components/ui/theme-selector";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -19,6 +21,11 @@ interface DashboardLayoutProps {
   selectChat: (chatId: string) => Promise<void>;
   deleteChat: (chatId: string) => Promise<void>;
   renameChat?: (chatId: string, newName: string) => Promise<void>;
+  onSendMessage?: (message: string) => Promise<void>;
+  onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
+  onDeleteMessage?: (messageId: string) => Promise<void>;
+  onRenameChat?: (newName: string) => Promise<void>;
+  onSearchInChat?: (query: string) => void;
 }
 
 export function DashboardLayout({
@@ -30,12 +37,21 @@ export function DashboardLayout({
   selectChat,
   deleteChat,
   renameChat,
+  onSendMessage,
+  onEditMessage,
+  onDeleteMessage,
+  onRenameChat,
+  onSearchInChat,
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [renamingChat, setRenamingChat] = useState<Chat | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const { user, isLoading: userLoading } = useUser();
+  const { getThemeClasses, isDark } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -43,8 +59,9 @@ export function DashboardLayout({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [returnUrl, setReturnUrl] = useState("/dashboard");
 
+  const themeClasses = getThemeClasses();
+
   const openProfile = () => {
-    // Store the current URL as return URL
     const currentUrl = pathname + window.location.search;
     setReturnUrl(currentUrl);
     setIsProfileOpen(true);
@@ -52,70 +69,10 @@ export function DashboardLayout({
 
   const closeProfile = () => {
     setIsProfileOpen(false);
-    // Navigate back to the stored return URL if needed
     if (returnUrl !== pathname + window.location.search) {
       router.push(returnUrl);
     }
   };
-
-  // Get user's theme - with fallback
-  const userTheme = user?.theme || "blue";
-
-  // Simple theme classes - using template literals for dynamic classes
-  const getThemeClasses = (theme: string) => {
-    switch (theme) {
-      case "green":
-        return {
-          primary: "bg-green-600",
-          primaryHover: "hover:bg-green-700",
-          primaryLight: "bg-green-50",
-          primaryBorder: "border-green-200",
-          primaryText: "text-green-900",
-        };
-      case "purple":
-        return {
-          primary: "bg-purple-600",
-          primaryHover: "hover:bg-purple-700",
-          primaryLight: "bg-purple-50",
-          primaryBorder: "border-purple-200",
-          primaryText: "text-purple-900",
-        };
-      case "red":
-        return {
-          primary: "bg-red-600",
-          primaryHover: "hover:bg-red-700",
-          primaryLight: "bg-red-50",
-          primaryBorder: "border-red-200",
-          primaryText: "text-red-900",
-        };
-      case "orange":
-        return {
-          primary: "bg-orange-600",
-          primaryHover: "hover:bg-orange-700",
-          primaryLight: "bg-orange-50",
-          primaryBorder: "border-orange-200",
-          primaryText: "text-orange-900",
-        };
-      case "indigo":
-        return {
-          primary: "bg-indigo-600",
-          primaryHover: "hover:bg-indigo-700",
-          primaryLight: "bg-indigo-50",
-          primaryBorder: "border-indigo-200",
-          primaryText: "text-indigo-900",
-        };
-      default: // blue
-        return {
-          primary: "bg-blue-600",
-          primaryHover: "hover:bg-blue-700",
-          primaryLight: "bg-blue-50",
-          primaryBorder: "border-blue-200",
-          primaryText: "text-blue-900",
-        };
-    }
-  };
-
-  const themeClasses = getThemeClasses(userTheme);
 
   const handleLogout = async () => {
     try {
@@ -138,12 +95,10 @@ export function DashboardLayout({
     setSidebarOpen(false);
     const newChatId = await createNewChat();
 
-    // Update URL after chat is created
     if (newChatId) {
       if (pathname === "/profile") {
         router.push(`/dashboard?chat=${newChatId}`);
       } else {
-        // Update URL to reflect the new chat
         window.history.replaceState({}, "", `/dashboard?chat=${newChatId}`);
       }
     } else if (pathname === "/profile") {
@@ -152,15 +107,12 @@ export function DashboardLayout({
   };
 
   const handleSelectChat = async (chatId: string) => {
-    // First, select the chat
     await selectChat(chatId);
     setSidebarOpen(false);
 
-    // Then update URL after chat is selected
     if (pathname === "/profile") {
       router.push(`/dashboard?chat=${chatId}`);
     } else {
-      // Update URL to reflect the selected chat
       window.history.replaceState({}, "", `/dashboard?chat=${chatId}`);
     }
   };
@@ -187,25 +139,28 @@ export function DashboardLayout({
   };
 
   const handleSearchResult = (chatId: string, messageId: string) => {
-    // Close global search
     setShowGlobalSearch(false);
-
-    // Navigate to the chat and highlight the message
     handleSelectChat(chatId);
 
-    // Scroll to message after a delay to ensure chat is loaded
     setTimeout(() => {
       const messageElement = document.getElementById(`message-${messageId}`);
       if (messageElement) {
         messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
-        // Briefly highlight the message
-        messageElement.classList.add("bg-yellow-100");
+        messageElement.classList.add("message-highlight");
         setTimeout(() => {
-          messageElement.classList.remove("bg-yellow-100");
+          messageElement.classList.remove("message-highlight");
         }, 2000);
       }
     }, 1000);
   };
+
+  // Filter messages for in-chat search
+  const filteredMessages =
+    activeChat?.messages?.filter((msg) =>
+      searchQuery.trim()
+        ? msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+        : true
+    ) || [];
 
   const formatChatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -232,10 +187,14 @@ export function DashboardLayout({
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div
+        className={`min-h-screen ${themeClasses.backgroundSecondary} flex items-center justify-center`}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div
+            className={`animate-spin rounded-full h-12 w-12 border-b-2 ${themeClasses.primary.replace("bg-", "border-")} mx-auto mb-4`}
+          ></div>
+          <p className={themeClasses.textSecondary}>Loading...</p>
         </div>
       </div>
     );
@@ -243,12 +202,14 @@ export function DashboardLayout({
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div
+        className={`min-h-screen ${themeClasses.backgroundSecondary} flex items-center justify-center`}
+      >
         <div className="text-center">
           <p className="text-red-600 mb-4">Please log in to continue</p>
           <Link
             href="/auth/login"
-            className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+            className={`inline-block ${themeClasses.primary} text-white px-4 py-2 rounded ${themeClasses.primaryHover} transition-colors`}
           >
             Go to Login
           </Link>
@@ -258,46 +219,68 @@ export function DashboardLayout({
   }
 
   return (
-    <div className="h-screen bg-gray-50 p-6 flex justify-center items-center">
+    <div
+      className={`h-screen ${themeClasses.backgroundSecondary} p-6 flex justify-center items-center`}
+    >
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         >
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-75"></div>
+          <div
+            className={`fixed inset-0 ${isDark ? "bg-black/50" : "bg-gray-600/75"}`}
+          ></div>
         </div>
       )}
 
-      <div className="flex overflow-hidden bg-white shadow-lg w-full max-w-7xl h-full rounded-lg">
-        {/* Sidebar */}
+      <div
+        className={`flex overflow-hidden ${themeClasses.background} shadow-lg w-full max-w-7xl h-full rounded-lg ${themeClasses.border} border`}
+      >
+        {/* Sidebar - IMPROVED visibility in dark mode */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+          className={`fixed inset-y-0 left-0 z-50 w-80 shadow-lg transform transition-transform duration-300 ease-in-out
                ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
                lg:translate-x-0 lg:static lg:inset-0`}
+          style={{
+            // Solid background in dark mode for better visibility
+            backgroundColor: isDark ? "rgb(17, 24, 39)" : "white",
+            borderRight: isDark
+              ? "1px solid rgb(55, 65, 81)"
+              : "1px solid rgb(229, 231, 235)",
+          }}
         >
           <div className="flex flex-col h-full">
-            {/* VU Logo and Title */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            {/* VU Logo and Title - Enhanced visibility */}
+            <div
+              className={`flex items-center justify-between px-6 py-4 border-b`}
+              style={{
+                borderColor: isDark ? "rgb(55, 65, 81)" : "rgb(229, 231, 235)",
+              }}
+            >
               <div className="flex items-center space-x-3">
                 <div
-                  className={`w-8 h-8 ${themeClasses.primary} rounded-lg flex items-center justify-center`}
+                  className={`w-8 h-8 ${themeClasses.primary} rounded-lg flex items-center justify-center shadow-md`}
                 >
                   <span className="text-white font-bold text-sm">VU</span>
                 </div>
                 <div>
-                  <h1 className="text-lg font-semibold text-gray-900">
+                  <h1
+                    className={`text-lg font-semibold ${isDark ? "text-gray-100" : "text-gray-900"}`}
+                  >
                     VU Assistant
                   </h1>
-                  <p className="text-sm text-gray-500">
-                    AI-Powered • {userTheme}
+                  <p
+                    className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                  >
+                    AI-Powered • {user.theme} • {isDark ? "Dark" : "Light"}
                   </p>
                 </div>
               </div>
               {/* Close button for mobile */}
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-600"
+                className={`lg:hidden p-1 rounded-md ${isDark ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"} transition-colors`}
               >
                 <svg
                   className="w-6 h-6"
@@ -319,11 +302,11 @@ export function DashboardLayout({
             <div className="flex-1 px-6 py-4 overflow-y-auto">
               {/* Action Buttons */}
               <div className="space-y-3 mb-6">
-                {/* New Chat Button */}
+                {/* New Chat Button - Enhanced for dark mode */}
                 <button
                   onClick={handleNewChat}
                   disabled={isLoading}
-                  className={`w-full ${themeClasses.primary} text-white px-4 py-3 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`w-full ${themeClasses.primary} text-white px-4 py-3 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm`}
                 >
                   <svg
                     className="w-5 h-5"
@@ -341,13 +324,13 @@ export function DashboardLayout({
                   <span>{isLoading ? "Creating..." : "New Chat"}</span>
                 </button>
 
-                {/* Global Search Button */}
+                {/* Global Search Button - Enhanced styling */}
                 <button
                   onClick={() => setShowGlobalSearch(!showGlobalSearch)}
-                  className={`w-full border border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2 ${
+                  className={`w-full border px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium ${
                     showGlobalSearch
-                      ? `${themeClasses.primaryLight} ${themeClasses.primaryBorder}`
-                      : ""
+                      ? `${themeClasses.primaryLight} ${themeClasses.primaryBorder} ${themeClasses.primaryText} border-2`
+                      : `${isDark ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500" : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"}`
                   }`}
                 >
                   <svg
@@ -377,9 +360,11 @@ export function DashboardLayout({
                 </div>
               )}
 
-              {/* Chat Sessions List */}
+              {/* Chat Sessions List - Enhanced visibility */}
               <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                <h3
+                  className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-500"} uppercase tracking-wider mb-3`}
+                >
                   Chat Sessions ({chats.length})
                 </h3>
 
@@ -387,14 +372,16 @@ export function DashboardLayout({
                   <div className="space-y-2">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="animate-pulse">
-                        <div className="h-12 bg-gray-200 rounded-lg"></div>
+                        <div
+                          className={`h-12 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-lg`}
+                        ></div>
                       </div>
                     ))}
                   </div>
                 ) : chats.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8">
                     <svg
-                      className="w-12 h-12 mx-auto mb-3 text-gray-300"
+                      className={`w-12 h-12 mx-auto mb-3 ${isDark ? "text-gray-600" : "text-gray-300"}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -406,8 +393,14 @@ export function DashboardLayout({
                         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                       />
                     </svg>
-                    <p className="text-sm">No chats yet</p>
-                    <p className="text-xs text-gray-300">
+                    <p
+                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                    >
+                      No chats yet
+                    </p>
+                    <p
+                      className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                    >
                       Click "New Chat" to start!
                     </p>
                   </div>
@@ -419,7 +412,7 @@ export function DashboardLayout({
                         className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                           activeChat?.id === chat.id
                             ? `${themeClasses.primaryLight} border ${themeClasses.primaryBorder}`
-                            : "hover:bg-gray-50"
+                            : `${isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"}`
                         }`}
                         onClick={() => handleSelectChat(chat.id)}
                       >
@@ -428,17 +421,19 @@ export function DashboardLayout({
                             className={`text-sm font-medium truncate ${
                               activeChat?.id === chat.id
                                 ? themeClasses.primaryText
-                                : "text-gray-900"
+                                : `${isDark ? "text-gray-200" : "text-gray-900"}`
                             }`}
                           >
                             {chat.name}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p
+                            className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} mt-1`}
+                          >
                             {formatChatTime(chat.updatedAt)}
                           </p>
                         </div>
 
-                        {/* Chat Actions */}
+                        {/* Chat Actions - Enhanced visibility */}
                         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {/* Rename Button */}
                           {renameChat && (
@@ -447,7 +442,7 @@ export function DashboardLayout({
                                 e.stopPropagation();
                                 setRenamingChat(chat);
                               }}
-                              className="p-1 rounded text-gray-400 hover:text-blue-600 transition-colors"
+                              className={`p-1 rounded ${isDark ? "text-gray-400 hover:text-blue-400 hover:bg-gray-600" : "text-gray-400 hover:text-blue-600 hover:bg-gray-100"} transition-colors`}
                               title="Rename chat"
                             >
                               <svg
@@ -469,7 +464,7 @@ export function DashboardLayout({
                           {/* Delete Button */}
                           <button
                             onClick={(e) => handleDeleteChat(chat.id, e)}
-                            className="p-1 rounded text-gray-400 hover:text-red-600 transition-colors"
+                            className={`p-1 rounded ${isDark ? "text-gray-400 hover:text-red-400 hover:bg-gray-600" : "text-gray-400 hover:text-red-600 hover:bg-gray-100"} transition-colors`}
                             title="Delete chat"
                           >
                             <svg
@@ -494,11 +489,16 @@ export function DashboardLayout({
               </div>
             </div>
 
-            {/* User Profile Section at Bottom */}
-            <div className="border-t border-gray-200 p-4">
+            {/* User Profile Section at Bottom - Enhanced */}
+            <div
+              className={`border-t p-4`}
+              style={{
+                borderColor: isDark ? "rgb(55, 65, 81)" : "rgb(229, 231, 235)",
+              }}
+            >
               <div className="flex items-center space-x-3 mb-3">
                 <div
-                  className={`w-10 h-10 ${themeClasses.primaryLight} rounded-full flex items-center justify-center`}
+                  className={`w-10 h-10 ${themeClasses.primaryLight} ${themeClasses.primaryBorder} border rounded-full flex items-center justify-center`}
                 >
                   <span
                     className={`${themeClasses.primaryText} font-semibold text-sm`}
@@ -507,18 +507,24 @@ export function DashboardLayout({
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p
+                    className={`text-sm font-medium ${isDark ? "text-gray-100" : "text-gray-900"} truncate`}
+                  >
                     {user.displayName}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  <p
+                    className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} truncate`}
+                  >
+                    {user.email}
+                  </p>
                 </div>
               </div>
 
-              {/* Profile Actions */}
+              {/* Profile Actions - Enhanced for dark mode */}
               <div className="space-y-1">
                 <button
                   onClick={openProfile}
-                  className={`w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-2`}
+                  className={`w-full text-left px-3 py-2 text-sm ${isDark ? "text-gray-300 hover:bg-gray-700 hover:text-gray-100" : "text-gray-700 hover:bg-gray-100"} rounded-md flex items-center space-x-2 transition-colors`}
                 >
                   <svg
                     className="w-4 h-4"
@@ -544,7 +550,7 @@ export function DashboardLayout({
 
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center space-x-2"
+                  className={`w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-md flex items-center space-x-2 transition-colors`}
                 >
                   <svg
                     className="w-4 h-4"
@@ -568,55 +574,142 @@ export function DashboardLayout({
 
         {/* Main Content */}
         <div className="flex flex-col flex-1 overflow-auto">
-          {/* Top Header */}
-          <header className="bg-white shadow-sm border-b border-gray-200">
+          {/* Consolidated Header - FIXED: Single search button on mobile */}
+          <header
+            className={`${themeClasses.background} shadow-sm ${themeClasses.borderLight} border-b sticky top-0 z-10`}
+          >
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center py-4">
-                {/* Mobile menu button */}
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
-                </button>
-
-                {/* Header Title */}
-                <div className="flex-1 lg:flex-none">
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {pathname === "/profile"
-                      ? "Profile Settings"
-                      : activeChat
-                        ? activeChat.name
-                        : "Dashboard"}
-                  </h2>
-                </div>
-
-                {/* Header Actions */}
+                {/* Left Section - Mobile menu + Title */}
                 <div className="flex items-center space-x-4">
-                  {/* Global Search Toggle (Mobile) */}
+                  {/* Mobile menu button */}
                   <button
-                    onClick={() => setShowGlobalSearch(!showGlobalSearch)}
-                    className={`lg:hidden p-2 rounded-lg transition-colors ${
-                      showGlobalSearch
-                        ? `${themeClasses.primary} text-white`
-                        : "hover:bg-gray-100 text-gray-600"
-                    }`}
-                    title="Global search"
+                    onClick={() => setSidebarOpen(true)}
+                    className={`lg:hidden p-2 rounded-md ${themeClasses.textMuted} ${themeClasses.hover}`}
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h16"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Header Title */}
+                  <div>
+                    <h2
+                      className={`text-xl font-semibold ${themeClasses.text}`}
+                    >
+                      {pathname === "/profile"
+                        ? "Profile Settings"
+                        : activeChat
+                          ? activeChat.name
+                          : "Dashboard"}
+                    </h2>
+                    {activeChat && (
+                      <p className={`text-sm ${themeClasses.textMuted}`}>
+                        {filteredMessages.length} message
+                        {filteredMessages.length !== 1 ? "s" : ""}
+                        {searchQuery &&
+                          ` • ${filteredMessages.length} matching`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Section - Chat Actions + Theme - FIXED: Single search on mobile */}
+                <div className="flex items-center space-x-2">
+                  {/* Chat-specific search - Desktop only OR when active chat exists */}
+                  {activeChat && (
+                    <button
+                      onClick={() => {
+                        setShowSearch(!showSearch);
+                        if (showSearch) {
+                          setSearchQuery("");
+                        }
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        showSearch
+                          ? `${themeClasses.primary} text-white`
+                          : `${themeClasses.hover} ${themeClasses.textSecondary}`
+                      }`}
+                      title="Search in current chat"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Global Search Toggle - Mobile only when no active chat */}
+                  {!activeChat && (
+                    <button
+                      onClick={() => setShowGlobalSearch(!showGlobalSearch)}
+                      className={`lg:hidden p-2 rounded-lg transition-colors ${
+                        showGlobalSearch
+                          ? `${themeClasses.primary} text-white`
+                          : `${themeClasses.hover} ${themeClasses.textSecondary}`
+                      }`}
+                      title="Search all chats"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Theme Selector */}
+                  <ThemeSelector />
+                </div>
+              </div>
+
+              {/* In-Chat Search Bar */}
+              {activeChat && showSearch && (
+                <div
+                  className={`pb-3 ${themeClasses.borderLight} border-t pt-3`}
+                >
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        if (onSearchInChat) {
+                          onSearchInChat(e.target.value);
+                        }
+                      }}
+                      placeholder="Search messages in this chat..."
+                      className={`w-full pl-10 pr-10 py-2 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} transition-colors placeholder:${themeClasses.textMuted}`}
+                    />
+                    <svg
+                      className={`absolute left-3 top-2.5 w-5 h-5 ${themeClasses.textMuted}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -628,18 +721,39 @@ export function DashboardLayout({
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                       />
                     </svg>
-                  </button>
-
-                  {/* Theme indicator */}
-                  <div
-                    className={`w-4 h-4 ${themeClasses.primary} rounded-full`}
-                    title={`Theme: ${userTheme}`}
-                  ></div>
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className={`absolute right-3 top-2.5 ${themeClasses.textMuted} hover:${themeClasses.text} transition-colors`}
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  {searchQuery && (
+                    <p className={`text-xs ${themeClasses.textMuted} mt-2`}>
+                      Found {filteredMessages.length} message
+                      {filteredMessages.length !== 1 ? "s" : ""} matching "
+                      {searchQuery}"
+                    </p>
+                  )}
                 </div>
-              </div>
+              )}
 
-              {/* Mobile Global Search */}
-              {showGlobalSearch && (
+              {/* Mobile Global Search - Only when no active chat */}
+              {!activeChat && showGlobalSearch && (
                 <div className="lg:hidden pb-4">
                   <GlobalSearch
                     onSelectResult={(chatId, messageId) => {
@@ -655,7 +769,7 @@ export function DashboardLayout({
 
           {/* Page Content */}
           <main className="flex-1 overflow-auto">
-            <div className="px-4 sm:px-6 lg:px-8 py-6">{children}</div>
+            <div className="h-full">{children}</div>
           </main>
         </div>
       </div>

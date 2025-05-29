@@ -14,6 +14,114 @@
   }
 }
 
+/* Dark mode utilities */
+.dark {
+  color-scheme: dark;
+}
+
+/* Custom scrollbar for chat */
+.chat-messages {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.7);
+}
+
+.dark .chat-messages::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.5);
+}
+
+.dark .chat-messages::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(75, 85, 99, 0.7);
+}
+
+/* Smooth theme transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Message highlight animation */
+@keyframes messageHighlight {
+  0% {
+    background-color: rgba(251, 191, 36, 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.message-highlight {
+  animation: messageHighlight 2s ease-out;
+}
+
+/* Loading animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Glass morphism effects for dark mode */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Focus ring improvements for dark mode */
+.focus-visible:focus-visible {
+  outline: 2px solid;
+  outline-offset: 2px;
+}
+
+.dark .focus-visible:focus-visible {
+  outline-color: rgba(59, 130, 246, 0.8);
+}
+
+/* Custom mark styling for search highlights */
+mark {
+  background-color: rgba(251, 191, 36, 0.3);
+  color: inherit;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.dark mark {
+  background-color: rgba(251, 191, 36, 0.2);
+}
+
 body {
   color: var(--foreground);
   background: var(--background);

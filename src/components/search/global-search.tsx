@@ -1,8 +1,9 @@
-// src/components/search/global-search.tsx
+// src/components/search/global-search.tsx (FIXED - Proper text colors)
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/lib/hooks/use-user";
+import { useTheme } from "@/lib/context/theme-context";
 
 interface SearchResult {
   messageId: string;
@@ -32,58 +33,9 @@ export function GlobalSearch({
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useUser();
+  const { getThemeClasses } = useTheme();
 
-  // Get user's theme
-  const userTheme = user?.theme || "blue";
-
-  const getThemeClasses = (theme: string) => {
-    switch (theme) {
-      case "green":
-        return {
-          primary: "bg-green-600",
-          primaryHover: "hover:bg-green-50",
-          primaryText: "text-green-600",
-          focus: "focus:ring-green-500 focus:border-green-500",
-        };
-      case "purple":
-        return {
-          primary: "bg-purple-600",
-          primaryHover: "hover:bg-purple-50",
-          primaryText: "text-purple-600",
-          focus: "focus:ring-purple-500 focus:border-purple-500",
-        };
-      case "red":
-        return {
-          primary: "bg-red-600",
-          primaryHover: "hover:bg-red-50",
-          primaryText: "text-red-600",
-          focus: "focus:ring-red-500 focus:border-red-500",
-        };
-      case "orange":
-        return {
-          primary: "bg-orange-600",
-          primaryHover: "hover:bg-orange-50",
-          primaryText: "text-orange-600",
-          focus: "focus:ring-orange-500 focus:border-orange-500",
-        };
-      case "indigo":
-        return {
-          primary: "bg-indigo-600",
-          primaryHover: "hover:bg-indigo-50",
-          primaryText: "text-indigo-600",
-          focus: "focus:ring-indigo-500 focus:border-indigo-500",
-        };
-      default: // blue
-        return {
-          primary: "bg-blue-600",
-          primaryHover: "hover:bg-blue-50",
-          primaryText: "text-blue-600",
-          focus: "focus:ring-blue-500 focus:border-blue-500",
-        };
-    }
-  };
-
-  const themeClasses = getThemeClasses(userTheme);
+  const themeClasses = getThemeClasses();
 
   // Debounced search
   useEffect(() => {
@@ -206,7 +158,7 @@ export function GlobalSearch({
 
   return (
     <div ref={searchRef} className={`relative ${className}`}>
-      {/* Search Input */}
+      {/* Search Input - FIXED: Proper text colors */}
       <div className="relative">
         <input
           ref={inputRef}
@@ -220,18 +172,20 @@ export function GlobalSearch({
             }
           }}
           placeholder="Search across all chats..."
-          className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg transition-colors ${themeClasses.focus} ${
-            isLoading ? "bg-gray-50" : "bg-white"
+          className={`w-full pl-10 pr-4 py-2 ${themeClasses.border} border rounded-lg transition-colors ${themeClasses.primaryFocus} ${themeClasses.background} ${themeClasses.text} placeholder:${themeClasses.textMuted} ${
+            isLoading ? "opacity-75" : ""
           }`}
         />
 
         {/* Search Icon / Loading */}
         <div className="absolute left-3 top-2.5">
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+            <div
+              className={`w-5 h-5 border-2 ${themeClasses.border} border-t-blue-600 rounded-full animate-spin`}
+            ></div>
           ) : (
             <svg
-              className="w-5 h-5 text-gray-400"
+              className={`w-5 h-5 ${themeClasses.textMuted}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -255,7 +209,7 @@ export function GlobalSearch({
               setIsOpen(false);
               inputRef.current?.focus();
             }}
-            className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 transition-colors"
+            className={`absolute right-3 top-2.5 ${themeClasses.textMuted} ${themeClasses.hover} transition-colors`}
           >
             <svg
               className="w-5 h-5"
@@ -276,18 +230,22 @@ export function GlobalSearch({
 
       {/* Search Results Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+        <div
+          className={`absolute top-full left-0 right-0 z-50 mt-1 ${themeClasses.background} ${themeClasses.border} border rounded-lg shadow-lg max-h-96 overflow-y-auto`}
+        >
           {results.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
+            <div className="p-4 text-center">
               {isLoading ? (
                 <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                  <span>Searching...</span>
+                  <div
+                    className={`w-4 h-4 border-2 ${themeClasses.border} border-t-blue-600 rounded-full animate-spin`}
+                  ></div>
+                  <span className={themeClasses.textMuted}>Searching...</span>
                 </div>
               ) : query.trim().length >= 2 ? (
                 <>
                   <svg
-                    className="w-8 h-8 mx-auto mb-2 text-gray-300"
+                    className={`w-8 h-8 mx-auto mb-2 ${themeClasses.textMuted}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -299,16 +257,22 @@ export function GlobalSearch({
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                  <p>No messages found for "{query}"</p>
+                  <p className={themeClasses.textMuted}>
+                    No messages found for "{query}"
+                  </p>
                 </>
               ) : (
-                <p>Type at least 2 characters to search</p>
+                <p className={themeClasses.textMuted}>
+                  Type at least 2 characters to search
+                </p>
               )}
             </div>
           ) : (
             <>
               {/* Results Header */}
-              <div className="px-4 py-2 border-b border-gray-100 bg-gray-50 text-sm font-medium text-gray-700">
+              <div
+                className={`px-4 py-2 ${themeClasses.borderLight} border-b ${themeClasses.backgroundSecondary} text-sm font-medium ${themeClasses.textSecondary}`}
+              >
                 {results.length} result{results.length !== 1 ? "s" : ""} for "
                 {query}"
               </div>
@@ -319,24 +283,26 @@ export function GlobalSearch({
                   <button
                     key={`${result.chatId}-${result.messageId}`}
                     onClick={() => handleSelectResult(result)}
-                    className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-b-0 transition-colors ${
+                    className={`w-full text-left px-4 py-3 ${themeClasses.borderLight} border-b last:border-b-0 transition-colors ${
                       index === selectedIndex
-                        ? `${themeClasses.primaryHover} ${themeClasses.primaryText}`
-                        : "hover:bg-gray-50"
+                        ? `${themeClasses.primaryLight} ${themeClasses.primaryText}`
+                        : themeClasses.hover
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         {/* Chat Name */}
                         <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                          <h4
+                            className={`text-sm font-medium ${themeClasses.text} truncate`}
+                          >
                             {result.chatName}
                           </h4>
                           <span
                             className={`px-2 py-0.5 text-xs rounded-full ${
                               result.role === "USER"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-green-100 text-green-800"
+                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                                : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                             }`}
                           >
                             {result.role === "USER" ? "You" : "Assistant"}
@@ -345,7 +311,7 @@ export function GlobalSearch({
 
                         {/* Message Content */}
                         <p
-                          className="text-sm text-gray-600 leading-relaxed"
+                          className={`text-sm ${themeClasses.textSecondary} leading-relaxed`}
                           dangerouslySetInnerHTML={{
                             __html: truncateContent(result.highlightedContent),
                           }}
@@ -353,7 +319,9 @@ export function GlobalSearch({
                       </div>
 
                       {/* Date */}
-                      <div className="ml-2 text-xs text-gray-400 whitespace-nowrap">
+                      <div
+                        className={`ml-2 text-xs ${themeClasses.textMuted} whitespace-nowrap`}
+                      >
                         {formatDate(result.createdAt)}
                       </div>
                     </div>
@@ -362,7 +330,9 @@ export function GlobalSearch({
               </div>
 
               {/* Footer */}
-              <div className="px-4 py-2 border-t border-gray-100 bg-gray-50 text-xs text-gray-500">
+              <div
+                className={`px-4 py-2 ${themeClasses.borderLight} border-t ${themeClasses.backgroundSecondary} text-xs ${themeClasses.textMuted}`}
+              >
                 Use ↑↓ to navigate, Enter to select, Esc to close
               </div>
             </>

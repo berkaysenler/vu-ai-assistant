@@ -1,7 +1,9 @@
+// src/components/profile/profile-settings-form.tsx (UPDATED - Dark mode compatible)
 "use client";
 
 import { useState, useEffect } from "react";
 import { useUser } from "@/lib/hooks/use-user";
+import { useTheme } from "@/lib/context/theme-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -26,16 +28,49 @@ interface FormErrors {
 }
 
 const themeOptions = [
-  { value: "blue", name: "Blue", color: "bg-blue-600" },
-  { value: "green", name: "Green", color: "bg-green-600" },
-  { value: "purple", name: "Purple", color: "bg-purple-600" },
-  { value: "red", name: "Red", color: "bg-red-600" },
-  { value: "orange", name: "Orange", color: "bg-orange-600" },
-  { value: "indigo", name: "Indigo", color: "bg-indigo-600" },
+  {
+    value: "blue",
+    name: "Blue",
+    color: "bg-blue-500",
+    darkColor: "bg-blue-400",
+  },
+  {
+    value: "green",
+    name: "Green",
+    color: "bg-green-500",
+    darkColor: "bg-green-400",
+  },
+  {
+    value: "purple",
+    name: "Purple",
+    color: "bg-purple-500",
+    darkColor: "bg-purple-400",
+  },
+  { value: "red", name: "Red", color: "bg-red-500", darkColor: "bg-red-400" },
+  {
+    value: "orange",
+    name: "Orange",
+    color: "bg-orange-500",
+    darkColor: "bg-orange-400",
+  },
+  {
+    value: "indigo",
+    name: "Indigo",
+    color: "bg-indigo-500",
+    darkColor: "bg-indigo-400",
+  },
 ];
 
 export function ProfileSettingsForm() {
   const { user, isLoading: userLoading, refreshUser } = useUser();
+  const {
+    getThemeClasses,
+    isDark,
+    colorTheme,
+    darkMode,
+    setColorTheme,
+    setDarkMode,
+  } = useTheme();
   const [formData, setFormData] = useState<FormData>({
     displayName: "",
     email: "",
@@ -49,6 +84,8 @@ export function ProfileSettingsForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
+  const themeClasses = getThemeClasses();
 
   // Initialize form with user data
   useEffect(() => {
@@ -77,6 +114,11 @@ export function ProfileSettingsForm() {
     if (successMessage) {
       setSuccessMessage("");
     }
+  };
+
+  const handleThemeChange = (newTheme: string) => {
+    setFormData((prev) => ({ ...prev, theme: newTheme }));
+    setColorTheme(newTheme as any);
   };
 
   const validateForm = (): boolean => {
@@ -162,15 +204,6 @@ export function ProfileSettingsForm() {
         updateData.newPassword = formData.newPassword;
       }
 
-      console.log("Sending update data:", {
-        ...updateData,
-        emailChangePassword: updateData.emailChangePassword
-          ? "[HIDDEN]"
-          : undefined,
-        currentPassword: updateData.currentPassword ? "[HIDDEN]" : undefined,
-        newPassword: updateData.newPassword ? "[HIDDEN]" : undefined,
-      });
-
       const response = await fetch("/api/user/profile", {
         method: "PUT",
         headers: {
@@ -181,7 +214,6 @@ export function ProfileSettingsForm() {
       });
 
       const data = await response.json();
-      console.log("Update response:", data);
 
       if (data.success) {
         setSuccessMessage(data.message);
@@ -218,7 +250,9 @@ export function ProfileSettingsForm() {
   if (userLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div
+          className={`animate-spin rounded-full h-8 w-8 border-b-2 ${themeClasses.primary.replace("bg-", "border-")}`}
+        ></div>
       </div>
     );
   }
@@ -226,7 +260,7 @@ export function ProfileSettingsForm() {
   if (!user) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600">Unable to load user data</p>
+        <p className={`${themeClasses.error}`}>Unable to load user data</p>
       </div>
     );
   }
@@ -239,21 +273,25 @@ export function ProfileSettingsForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Success Message */}
         {successMessage && (
-          <div className="p-4 text-sm text-green-700 bg-green-100 border border-green-200 rounded-md">
+          <div
+            className={`p-4 text-sm ${themeClasses.successLight} border rounded-md`}
+          >
             {successMessage}
           </div>
         )}
 
         {/* General Error */}
         {errors.general && (
-          <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+          <div
+            className={`p-4 text-sm ${themeClasses.errorLight} border border-red-200 dark:border-red-800/30 rounded-md`}
+          >
             {errors.general}
           </div>
         )}
 
         {/* Personal Information Section */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <div className={`${themeClasses.card} p-6 rounded-lg border`}>
+          <h3 className={`text-lg font-medium ${themeClasses.text} mb-4`}>
             Personal Information
           </h3>
 
@@ -261,7 +299,7 @@ export function ProfileSettingsForm() {
             <div>
               <label
                 htmlFor="displayName"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className={`block text-sm font-medium ${themeClasses.text} mb-1`}
               >
                 Display Name
               </label>
@@ -279,7 +317,7 @@ export function ProfileSettingsForm() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className={`block text-sm font-medium ${themeClasses.text} mb-1`}
               >
                 Email Address
               </label>
@@ -293,7 +331,7 @@ export function ProfileSettingsForm() {
                 placeholder="Enter your email address"
               />
               {isEmailChanged && (
-                <p className="mt-1 text-xs text-orange-600">
+                <p className={`mt-1 text-xs ${themeClasses.warning}`}>
                   ⚠️ Changing your email will require verification
                 </p>
               )}
@@ -305,7 +343,7 @@ export function ProfileSettingsForm() {
             <div className="mt-4">
               <label
                 htmlFor="emailChangePassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className={`block text-sm font-medium ${themeClasses.text} mb-1`}
               >
                 Confirm Password for Email Change
               </label>
@@ -318,69 +356,159 @@ export function ProfileSettingsForm() {
                 error={errors.emailChangePassword}
                 placeholder="Enter your current password to confirm email change"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className={`mt-1 text-xs ${themeClasses.textMuted}`}>
                 For security, we need your password to change your email address
               </p>
             </div>
           )}
         </div>
 
-        {/* Theme Selection */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Theme Preference
+        {/* Theme & Appearance Section */}
+        <div className={`${themeClasses.card} p-6 rounded-lg border`}>
+          <h3 className={`text-lg font-medium ${themeClasses.text} mb-4`}>
+            Theme & Appearance
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Current theme:{" "}
-            <span className="font-medium capitalize">
-              {user.theme || "blue"}
-            </span>
-          </p>
 
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-            {themeOptions.map((theme) => (
-              <label
-                key={theme.value}
-                className={`relative cursor-pointer rounded-lg p-3 flex flex-col items-center space-y-2 border-2 transition-colors ${
-                  formData.theme === theme.value
-                    ? "border-gray-900 bg-gray-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="theme"
-                  value={theme.value}
-                  checked={formData.theme === theme.value}
-                  onChange={handleInputChange}
-                  className="sr-only"
-                />
-                <div className={`w-6 h-6 rounded-full ${theme.color}`}></div>
-                <span className="text-xs font-medium text-gray-900">
-                  {theme.name}
-                </span>
-                {formData.theme === theme.value && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-2 h-2 text-white"
-                      fill="currentColor"
-                      viewBox="0 0 8 8"
-                    >
-                      <path d="M6.564.75l-3.59 3.612-1.538-1.55L0 4.26l2.974 2.99L8 2.193z" />
-                    </svg>
-                  </div>
-                )}
-              </label>
-            ))}
+          {/* Current Theme Info */}
+          <div
+            className={`${themeClasses.backgroundSecondary} p-4 rounded-lg mb-4`}
+          >
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-4 h-4 ${isDark ? themeOptions.find((t) => t.value === colorTheme)?.darkColor : themeOptions.find((t) => t.value === colorTheme)?.color} rounded-full`}
+              ></div>
+              <div>
+                <p className={`text-sm font-medium ${themeClasses.text}`}>
+                  Current:{" "}
+                  {themeOptions.find((t) => t.value === colorTheme)?.name} •{" "}
+                  {isDark ? "Dark" : "Light"}
+                </p>
+                <p className={`text-xs ${themeClasses.textMuted}`}>
+                  Theme changes apply immediately
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Color Theme Selection */}
+          <div className="mb-6">
+            <label
+              className={`block text-sm font-medium ${themeClasses.text} mb-3`}
+            >
+              Color Theme
+            </label>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+              {themeOptions.map((theme) => (
+                <label
+                  key={theme.value}
+                  className={`relative cursor-pointer rounded-lg p-3 flex flex-col items-center space-y-2 border-2 transition-colors ${
+                    formData.theme === theme.value
+                      ? `${themeClasses.primaryBorder} ${themeClasses.primaryLight}`
+                      : `${themeClasses.border} ${themeClasses.hover}`
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="theme"
+                    value={theme.value}
+                    checked={formData.theme === theme.value}
+                    onChange={(e) => handleThemeChange(e.target.value)}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`w-6 h-6 rounded-full ${isDark ? theme.darkColor : theme.color} shadow-sm`}
+                  ></div>
+                  <span className={`text-xs font-medium ${themeClasses.text}`}>
+                    {theme.name}
+                  </span>
+                  {formData.theme === theme.value && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow-sm">
+                      <svg
+                        className="w-2 h-2 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 8 8"
+                      >
+                        <path d="M6.564.75l-3.59 3.612-1.538-1.55L0 4.26l2.974 2.99L8 2.193z" />
+                      </svg>
+                    </div>
+                  )}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Dark Mode Selection */}
+          <div>
+            <label
+              className={`block text-sm font-medium ${themeClasses.text} mb-3`}
+            >
+              Brightness Mode
+            </label>
+            <div className="space-y-2">
+              {[
+                {
+                  value: "light",
+                  name: "Light",
+                  icon: "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",
+                },
+                {
+                  value: "dark",
+                  name: "Dark",
+                  icon: "M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z",
+                },
+                {
+                  value: "system",
+                  name: "System",
+                  icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+                },
+              ].map((mode) => (
+                <label
+                  key={mode.value}
+                  className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                    darkMode === mode.value
+                      ? `${themeClasses.primaryLight} ${themeClasses.primaryText} font-medium`
+                      : `${themeClasses.hover}`
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="darkMode"
+                    value={mode.value}
+                    checked={darkMode === mode.value}
+                    onChange={(e) => setDarkMode(e.target.value as any)}
+                    className="sr-only"
+                  />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d={mode.icon}
+                    />
+                  </svg>
+                  <span className={`text-sm ${themeClasses.text}`}>
+                    {mode.name}
+                  </span>
+                  {darkMode === mode.value && (
+                    <div className="ml-auto w-2 h-2 bg-green-500 rounded-full"></div>
+                  )}
+                </label>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Password Change Section */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <div className={`${themeClasses.card} p-6 rounded-lg border`}>
+          <h3 className={`text-lg font-medium ${themeClasses.text} mb-4`}>
             Change Password
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className={`text-sm ${themeClasses.textMuted} mb-4`}>
             Leave password fields empty if you don't want to change your
             password
           </p>
@@ -389,7 +517,7 @@ export function ProfileSettingsForm() {
             <div>
               <label
                 htmlFor="currentPassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className={`block text-sm font-medium ${themeClasses.text} mb-1`}
               >
                 Current Password
               </label>
@@ -408,7 +536,7 @@ export function ProfileSettingsForm() {
               <div>
                 <label
                   htmlFor="newPassword"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className={`block text-sm font-medium ${themeClasses.text} mb-1`}
                 >
                   New Password
                 </label>
@@ -426,7 +554,7 @@ export function ProfileSettingsForm() {
               <div>
                 <label
                   htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className={`block text-sm font-medium ${themeClasses.text} mb-1`}
                 >
                   Confirm New Password
                 </label>
