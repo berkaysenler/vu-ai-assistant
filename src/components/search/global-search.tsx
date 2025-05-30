@@ -1,4 +1,4 @@
-// src/components/search/global-search.tsx (FIXED - Proper text colors)
+// src/components/search/global-search.tsx (FIXED - Solid background in dark mode)
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -33,7 +33,7 @@ export function GlobalSearch({
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useUser();
-  const { getThemeClasses } = useTheme();
+  const { getThemeClasses, isDark } = useTheme();
 
   const themeClasses = getThemeClasses();
 
@@ -172,9 +172,13 @@ export function GlobalSearch({
             }
           }}
           placeholder="Search across all chats..."
-          className={`w-full pl-10 pr-4 py-2 ${themeClasses.border} border rounded-lg transition-colors ${themeClasses.primaryFocus} ${themeClasses.background} ${themeClasses.text} placeholder:${themeClasses.textMuted} ${
+          className={`w-full pl-10 pr-4 py-2 ${themeClasses.border} border rounded-lg transition-colors ${themeClasses.primaryFocus} ${themeClasses.text} placeholder:${themeClasses.textMuted} ${
             isLoading ? "opacity-75" : ""
           }`}
+          style={{
+            // Ensure solid background for input in dark mode
+            backgroundColor: isDark ? "rgb(55, 65, 81)" : "white",
+          }}
         />
 
         {/* Search Icon / Loading */}
@@ -228,10 +232,17 @@ export function GlobalSearch({
         )}
       </div>
 
-      {/* Search Results Dropdown */}
+      {/* Search Results Dropdown - FIXED: Solid background in dark mode */}
       {isOpen && (
         <div
-          className={`absolute top-full left-0 right-0 z-50 mt-1 ${themeClasses.background} ${themeClasses.border} border rounded-lg shadow-lg max-h-96 overflow-y-auto`}
+          className={`absolute top-full left-0 right-0 z-50 mt-1 ${themeClasses.border} border rounded-lg shadow-lg max-h-96 overflow-y-auto`}
+          style={{
+            // Ensure solid background in dark mode - NO TRANSPARENCY
+            backgroundColor: isDark ? "rgb(31, 41, 55)" : "white",
+            boxShadow: isDark
+              ? "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2)"
+              : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+          }}
         >
           {results.length === 0 ? (
             <div className="p-4 text-center">
@@ -271,7 +282,13 @@ export function GlobalSearch({
             <>
               {/* Results Header */}
               <div
-                className={`px-4 py-2 ${themeClasses.borderLight} border-b ${themeClasses.backgroundSecondary} text-sm font-medium ${themeClasses.textSecondary}`}
+                className={`px-4 py-2 ${themeClasses.borderLight} border-b text-sm font-medium ${themeClasses.textSecondary}`}
+                style={{
+                  // Ensure solid background for header in dark mode
+                  backgroundColor: isDark
+                    ? "rgb(55, 65, 81)"
+                    : "rgb(249, 250, 251)",
+                }}
               >
                 {results.length} result{results.length !== 1 ? "s" : ""} for "
                 {query}"
@@ -331,7 +348,13 @@ export function GlobalSearch({
 
               {/* Footer */}
               <div
-                className={`px-4 py-2 ${themeClasses.borderLight} border-t ${themeClasses.backgroundSecondary} text-xs ${themeClasses.textMuted}`}
+                className={`px-4 py-2 ${themeClasses.borderLight} border-t text-xs ${themeClasses.textMuted}`}
+                style={{
+                  // Ensure solid background for footer in dark mode
+                  backgroundColor: isDark
+                    ? "rgb(55, 65, 81)"
+                    : "rgb(249, 250, 251)",
+                }}
               >
                 Use ↑↓ to navigate, Enter to select, Esc to close
               </div>

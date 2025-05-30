@@ -1,4 +1,4 @@
-// src/lib/context/theme-context.tsx (ENHANCED - More color applications)
+// src/lib/context/theme-context.tsx (ENHANCED - Fixed primary light and border classes)
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -73,6 +73,7 @@ interface ThemeClasses {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// FIXED: Enhanced color theme map with proper light and border classes
 const colorThemeMap: Record<ColorTheme, any> = {
   blue: {
     light: {

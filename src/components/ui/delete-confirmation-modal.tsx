@@ -1,4 +1,4 @@
-// src/components/ui/delete-confirmation-modal.tsx
+// src/components/ui/delete-confirmation-modal.tsx (FIXED - Solid background in dark mode)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -29,7 +29,7 @@ export function DeleteConfirmationModal({
 }: DeleteConfirmationModalProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [typedText, setTypedText] = useState("");
-  const { getThemeClasses } = useTheme();
+  const { getThemeClasses, isDark } = useTheme();
 
   const themeClasses = getThemeClasses();
 
@@ -97,13 +97,20 @@ export function DeleteConfirmationModal({
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
-      {/* Modal Content */}
+      {/* Modal Content - FIXED: Solid background in dark mode */}
       <div
-        className={`w-full max-w-md ${themeClasses.background} rounded-xl shadow-2xl transform transition-all duration-200 ease-out ${
+        className={`w-full max-w-md rounded-xl shadow-2xl transform transition-all duration-200 ease-out ${
           isAnimating
             ? "scale-100 opacity-100 translate-y-0"
             : "scale-95 opacity-0 translate-y-4"
         }`}
+        style={{
+          // Ensure solid background in dark mode - NO TRANSPARENCY
+          backgroundColor: isDark ? "rgb(31, 41, 55)" : "white",
+          boxShadow: isDark
+            ? "0 25px 50px -12px rgba(0, 0, 0, 0.7)"
+            : "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        }}
       >
         {/* Header */}
         <div className={`px-6 py-4 ${themeClasses.borderLight} border-b`}>
@@ -199,7 +206,11 @@ export function DeleteConfirmationModal({
                 type="text"
                 value={typedText}
                 onChange={(e) => setTypedText(e.target.value)}
-                className={`w-full px-3 py-2 ${themeClasses.border} border rounded-md ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`w-full px-3 py-2 ${themeClasses.border} border rounded-md ${themeClasses.text} ${themeClasses.primaryFocus} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                style={{
+                  // Ensure solid background for input in dark mode
+                  backgroundColor: isDark ? "rgb(55, 65, 81)" : "white",
+                }}
                 placeholder={`Type "${itemName}" here`}
                 disabled={isLoading}
                 autoFocus
@@ -215,7 +226,11 @@ export function DeleteConfirmationModal({
 
         {/* Action Buttons */}
         <div
-          className={`px-6 py-4 ${themeClasses.backgroundSecondary} rounded-b-xl flex space-x-3`}
+          className={`px-6 py-4 rounded-b-xl flex space-x-3`}
+          style={{
+            // Ensure solid background for footer in dark mode
+            backgroundColor: isDark ? "rgb(55, 65, 81)" : "rgb(249, 250, 251)",
+          }}
         >
           <button
             onClick={handleClose}

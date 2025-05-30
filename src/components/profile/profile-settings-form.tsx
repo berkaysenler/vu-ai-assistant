@@ -1,4 +1,4 @@
-// src/components/profile/profile-settings-form.tsx (UPDATED - Dark mode compatible)
+// src/components/profile/profile-settings-form.tsx (FIXED - Immediate updates without refresh)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -116,8 +116,10 @@ export function ProfileSettingsForm() {
     }
   };
 
+  // FIXED: Handle theme change immediately without page refresh
   const handleThemeChange = (newTheme: string) => {
     setFormData((prev) => ({ ...prev, theme: newTheme }));
+    // Apply theme immediately in the UI
     setColorTheme(newTheme as any);
   };
 
@@ -227,15 +229,15 @@ export function ProfileSettingsForm() {
           confirmPassword: "",
         }));
 
-        // Refresh user data to get the latest information
+        // FIXED: Force refresh user data and wait for it to complete
+        console.log("Profile updated successfully, refreshing user data...");
         await refreshUser();
+        console.log("User data refresh completed");
 
-        // If theme was changed, refresh the page to apply new theme
-        if (updateData.theme !== user?.theme) {
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        }
+        // Force a small delay to ensure state propagation
+        setTimeout(() => {
+          console.log("Updated user:", user);
+        }, 100);
       } else {
         setErrors({ general: data.message });
       }

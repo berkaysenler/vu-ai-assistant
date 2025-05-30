@@ -1,4 +1,4 @@
-// src/components/layout/dashboard-layout.tsx (IMPROVED - Better dark mode sidebar & single search)
+// src/components/layout/dashboard-layout.tsx (FIXED - Profile icon circle color and letter)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,6 +7,7 @@ import { Chat, ChatWithMessages } from "@/lib/hooks/use-chats";
 import { useRouter, usePathname } from "next/navigation";
 import { GlobalSearch } from "@/components/search/global-search";
 import Link from "next/link";
+import Image from "next/image";
 import { ProfileOverlay } from "../profile/profile-overlay";
 import { TextInputModal } from "@/components/ui/text-input-modal";
 import { useTheme } from "@/lib/context/theme-context";
@@ -185,6 +186,13 @@ export function DashboardLayout({
     }
   };
 
+  // FIXED: Get the first letter of display name (or full name as fallback)
+  const getProfileInitial = () => {
+    if (!user) return "?";
+    const name = user.displayName || user.fullName || user.email;
+    return name.charAt(0).toUpperCase();
+  };
+
   if (userLoading) {
     return (
       <div
@@ -262,7 +270,13 @@ export function DashboardLayout({
                 <div
                   className={`w-8 h-8 ${themeClasses.primary} rounded-lg flex items-center justify-center shadow-md`}
                 >
-                  <span className="text-white font-bold text-sm">VU</span>
+                  <Image
+                    src="/vu-logo.png"
+                    alt="VU Assistant Logo"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 object-contain"
+                  />
                 </div>
                 <div>
                   <h1
@@ -273,7 +287,7 @@ export function DashboardLayout({
                   <p
                     className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
                   >
-                    AI-Powered • {user.theme} • {isDark ? "Dark" : "Light"}
+                    AI-Powered
                   </p>
                 </div>
               </div>
@@ -411,7 +425,7 @@ export function DashboardLayout({
                         key={chat.id}
                         className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
                           activeChat?.id === chat.id
-                            ? `${themeClasses.primaryLight} border ${themeClasses.primaryBorder}`
+                            ? `${themeClasses.primaryLight} ${themeClasses.primaryBorder} border-2`
                             : `${isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"}`
                         }`}
                         onClick={() => handleSelectChat(chat.id)}
@@ -489,7 +503,7 @@ export function DashboardLayout({
               </div>
             </div>
 
-            {/* User Profile Section at Bottom - Enhanced */}
+            {/* User Profile Section at Bottom - FIXED: Theme color circle and display name letter */}
             <div
               className={`border-t p-4`}
               style={{
@@ -497,20 +511,19 @@ export function DashboardLayout({
               }}
             >
               <div className="flex items-center space-x-3 mb-3">
+                {/* FIXED: Profile icon with theme color background and display name initial */}
                 <div
-                  className={`w-10 h-10 ${themeClasses.primaryLight} ${themeClasses.primaryBorder} border rounded-full flex items-center justify-center`}
+                  className={`w-10 h-10 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md`}
                 >
-                  <span
-                    className={`${themeClasses.primaryText} font-semibold text-sm`}
-                  >
-                    {user.fullName.charAt(0).toUpperCase()}
+                  <span className="text-white font-semibold text-sm">
+                    {getProfileInitial()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p
                     className={`text-sm font-medium ${isDark ? "text-gray-100" : "text-gray-900"} truncate`}
                   >
-                    {user.displayName}
+                    {user.displayName || user.fullName}
                   </p>
                   <p
                     className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} truncate`}

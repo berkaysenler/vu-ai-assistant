@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { useChats } from "@/lib/hooks/use-chats";
@@ -121,11 +122,13 @@ export default function DashboardPage() {
               <div
                 className={`w-12 h-12 ${themeClasses.background} rounded-lg flex items-center justify-center`}
               >
-                <span
-                  className={`${themeClasses.primaryText} font-bold text-lg`}
-                >
-                  VU
-                </span>
+                <Image
+                  src="/vu-icon.ico"
+                  alt="VU Assistant Logo"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
             <h2 className={`text-3xl font-bold ${themeClasses.text} mb-3`}>
@@ -141,7 +144,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Enhanced Features Highlight */}
-          <div
+          {/* <div
             className={`mb-8 p-6 ${themeClasses.primaryLight} rounded-xl ${themeClasses.primaryBorder} border`}
           >
             <h3 className={`text-lg font-semibold ${themeClasses.text} mb-3`}>
@@ -172,7 +175,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Quick Start Chat */}
           <div className="w-full max-w-2xl mb-8">
