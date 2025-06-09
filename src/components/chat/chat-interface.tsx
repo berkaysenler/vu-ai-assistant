@@ -1,4 +1,4 @@
-// src/components/chat/chat-interface.tsx (COMPLETE - Fixed with optimistic UI)
+// src/components/chat/chat-interface.tsx (UPDATED - AI responses in bubbles)
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -47,14 +47,12 @@ export function ChatInterface({
 
   // Auto-scroll to bottom when new messages arrive, but not on initial load
   useEffect(() => {
-    // Only auto-scroll if we're already near the bottom or if a new message was just added
     if (messagesContainerRef.current) {
       const container = messagesContainerRef.current;
       const isNearBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight <
         100;
 
-      // Auto-scroll only if user is near bottom (not if they've scrolled up to read old messages)
       if (isNearBottom || isSending) {
         setTimeout(() => {
           if (messagesEndRef.current) {
@@ -71,11 +69,10 @@ export function ChatInterface({
   // Initial scroll to bottom when component mounts or chat changes
   useEffect(() => {
     if (messagesContainerRef.current && displayMessages.length > 0) {
-      // Scroll to bottom immediately without animation when chat first loads
       messagesContainerRef.current.scrollTop =
         messagesContainerRef.current.scrollHeight;
     }
-  }, [chat.id]); // Trigger when chat changes
+  }, [chat.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,10 +176,10 @@ export function ChatInterface({
     return content.slice(0, maxLength).trim() + "...";
   };
 
-  // FIXED: Check if we should show the AI thinking indicator (only for quick actions)
+  // Check if we should show the AI thinking indicator
   const shouldShowThinking = () => {
     if (displayMessages.length === 0) return false;
-    if (isSending) return false; // Don't show thinking if we're actively sending
+    if (isSending) return false;
     const lastMessage = displayMessages[displayMessages.length - 1];
     return lastMessage.role === "USER" && lastMessage.id.startsWith("temp-");
   };
@@ -232,146 +229,213 @@ export function ChatInterface({
         ) : (
           <>
             {/* Messages */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {displayMessages.map((msg) => (
                 <div
                   key={msg.id}
                   id={`message-${msg.id}`}
                   className={`flex ${msg.role === "USER" ? "justify-end" : "justify-start"} group`}
                 >
-                  <div
-                    className={`max-w-2xl rounded-lg px-4 py-3 relative ${
-                      msg.role === "USER"
-                        ? `${themeClasses.primary} text-white shadow-md`
-                        : `${themeClasses.card} ${themeClasses.text} shadow-sm`
-                    }`}
-                  >
-                    {/* Message Actions (only for user messages and not temporary) */}
-                    {msg.role === "USER" &&
-                      !msg.id.startsWith("temp-") &&
-                      (onEditMessage || onDeleteMessage) && (
-                        <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex space-x-1">
-                            {onEditMessage && (
-                              <button
-                                onClick={() => startEditing(msg)}
-                                className="p-1 bg-gray-800 dark:bg-gray-600 text-white rounded-full hover:bg-gray-700 dark:hover:bg-gray-500 transition-colors shadow-md"
-                                title="Edit message"
-                              >
-                                <svg
-                                  className="w-3 h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                                  />
-                                </svg>
-                              </button>
-                            )}
-                            {onDeleteMessage && (
-                              <button
-                                onClick={() => setShowDeleteModal(msg)}
-                                className="p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-md"
-                                title="Delete message"
-                              >
-                                <svg
-                                  className="w-3 h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                  />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                    {/* Message Content */}
-                    {editingMessage?.id === msg.id ? (
-                      <div className="space-y-3">
-                        <textarea
-                          value={editingContent}
-                          onChange={(e) => setEditingContent(e.target.value)}
-                          className={`w-full p-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none`}
-                          rows={3}
-                          autoFocus
-                        />
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={saveEdit}
-                            disabled={isProcessing || !editingContent.trim()}
-                            className={`px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${themeClasses.primaryFocus}`}
-                          >
-                            {isProcessing ? "Saving..." : "Save"}
-                          </button>
-                          <button
-                            onClick={cancelEditing}
-                            disabled={isProcessing}
-                            className={`px-3 py-1 ${themeClasses.backgroundTertiary} ${themeClasses.text} text-sm rounded ${themeClasses.hover} transition-colors disabled:opacity-50`}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="whitespace-pre-wrap break-words leading-relaxed">
-                        {highlightSearchText(msg.content, searchQuery)}
+                  {/* UPDATED: Both USER and ASSISTANT messages now use bubbles */}
+                  <div className="max-w-3xl w-full flex items-start space-x-3">
+                    {/* Assistant Avatar */}
+                    {msg.role === "ASSISTANT" && (
+                      <div
+                        className={`w-8 h-8 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md flex-shrink-0 mt-1`}
+                      >
+                        <svg
+                          className="w-5 h-5 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.663 17h4.673M12 3v1m6.364-.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          />
+                        </svg>
                       </div>
                     )}
 
-                    {/* Message Time (not for temporary messages) */}
-                    {editingMessage?.id !== msg.id &&
-                      !msg.id.startsWith("temp-") && (
-                        <div
-                          className={`text-xs mt-2 ${
-                            msg.role === "USER"
-                              ? "text-white/70"
-                              : themeClasses.textMuted
-                          }`}
-                        >
-                          {formatMessageTime(msg.createdAt)}
-                        </div>
-                      )}
+                    <div
+                      className={`flex-1 ${msg.role === "USER" ? "flex justify-end" : ""}`}
+                    >
+                      {/* Message Bubble */}
+                      <div
+                        className={`relative rounded-2xl px-4 py-3 shadow-sm max-w-2xl ${
+                          msg.role === "USER"
+                            ? `${themeClasses.primary} text-white ml-auto`
+                            : `${themeClasses.backgroundSecondary} ${themeClasses.text} border ${themeClasses.borderLight}`
+                        }`}
+                      >
+                        {/* Message Actions (only for user messages and not temporary) */}
+                        {msg.role === "USER" &&
+                          !msg.id.startsWith("temp-") &&
+                          (onEditMessage || onDeleteMessage) && (
+                            <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex space-x-1">
+                                {onEditMessage && (
+                                  <button
+                                    onClick={() => startEditing(msg)}
+                                    className="p-1 bg-gray-800 dark:bg-gray-600 text-white rounded-full hover:bg-gray-700 dark:hover:bg-gray-500 transition-colors shadow-md"
+                                    title="Edit message"
+                                  >
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                      />
+                                    </svg>
+                                  </button>
+                                )}
+                                {onDeleteMessage && (
+                                  <button
+                                    onClick={() => setShowDeleteModal(msg)}
+                                    className="p-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-md"
+                                    title="Delete message"
+                                  >
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Message Content */}
+                        {editingMessage?.id === msg.id ? (
+                          <div className="space-y-3">
+                            <textarea
+                              value={editingContent}
+                              onChange={(e) =>
+                                setEditingContent(e.target.value)
+                              }
+                              className={`w-full p-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none`}
+                              rows={3}
+                              autoFocus
+                            />
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={saveEdit}
+                                disabled={
+                                  isProcessing || !editingContent.trim()
+                                }
+                                className={`px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${themeClasses.primaryFocus}`}
+                              >
+                                {isProcessing ? "Saving..." : "Save"}
+                              </button>
+                              <button
+                                onClick={cancelEditing}
+                                disabled={isProcessing}
+                                className={`px-3 py-1 ${themeClasses.backgroundTertiary} ${themeClasses.text} text-sm rounded ${themeClasses.hover} transition-colors disabled:opacity-50`}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="whitespace-pre-wrap break-words leading-relaxed text-base">
+                            {highlightSearchText(msg.content, searchQuery)}
+                          </div>
+                        )}
+
+                        {/* Message Time (not for temporary messages) */}
+                        {editingMessage?.id !== msg.id &&
+                          !msg.id.startsWith("temp-") && (
+                            <div
+                              className={`text-xs mt-2 ${
+                                msg.role === "USER"
+                                  ? "text-white/70"
+                                  : themeClasses.textMuted
+                              }`}
+                            >
+                              {formatMessageTime(msg.createdAt)}
+                            </div>
+                          )}
+                      </div>
+                    </div>
+
+                    {/* User Avatar */}
+                    {msg.role === "USER" && (
+                      <div
+                        className={`w-8 h-8 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md flex-shrink-0 mt-1`}
+                      >
+                        <span className="text-white font-semibold text-sm">
+                          {user?.displayName?.charAt(0).toUpperCase() ||
+                            user?.fullName?.charAt(0).toUpperCase() ||
+                            "U"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* FIXED: Show AI thinking indicator when last message is temporary user message */}
+            {/* AI Thinking Indicator */}
             {shouldShowThinking() && (
-              <div className="flex justify-start mt-6">
-                <div
-                  className={`${themeClasses.card} max-w-2xl rounded-lg px-4 py-3 shadow-sm`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div
-                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
-                      ></div>
-                      <div
-                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
+              <div className="flex justify-start">
+                <div className="max-w-3xl w-full flex items-start space-x-3">
+                  {/* Assistant Avatar */}
+                  <div
+                    className={`w-8 h-8 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md flex-shrink-0 mt-1`}
+                  >
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.663 17h4.673M12 3v1m6.364-.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                  </div>
+
+                  <div
+                    className={`${themeClasses.backgroundSecondary} border ${themeClasses.borderLight} rounded-2xl px-4 py-3 shadow-sm`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className="flex space-x-1">
+                        <div
+                          className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                        ></div>
+                        <div
+                          className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                      </div>
+                      <span className={`text-sm ${themeClasses.textMuted}`}>
+                        VU Assistant is thinking...
+                      </span>
                     </div>
-                    <span className={`text-sm ${themeClasses.textMuted}`}>
-                      VU Assistant is thinking...
-                    </span>
                   </div>
                 </div>
               </div>
@@ -380,26 +444,46 @@ export function ChatInterface({
             {/* Loading indicator when sending regular messages */}
             {isSending && (
               <div className="flex justify-start">
-                <div
-                  className={`${themeClasses.card} max-w-2xl rounded-lg px-4 py-3 shadow-sm`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div
-                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
-                      ></div>
-                      <div
-                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
+                <div className="max-w-3xl w-full flex items-start space-x-3">
+                  <div
+                    className={`w-8 h-8 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md flex-shrink-0 mt-1`}
+                  >
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.663 17h4.673M12 3v1m6.364-.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                  </div>
+
+                  <div
+                    className={`${themeClasses.backgroundSecondary} border ${themeClasses.borderLight} rounded-2xl px-4 py-3 shadow-sm`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className="flex space-x-1">
+                        <div
+                          className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                        ></div>
+                        <div
+                          className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                      </div>
+                      <span className={`text-sm ${themeClasses.textMuted}`}>
+                        VU Assistant is typing...
+                      </span>
                     </div>
-                    <span className={`text-sm ${themeClasses.textMuted}`}>
-                      VU Assistant is typing...
-                    </span>
                   </div>
                 </div>
               </div>
@@ -427,7 +511,7 @@ export function ChatInterface({
                 }
               }}
               placeholder="Ask about courses, enrollment, campus facilities, or anything VU-related..."
-              className={`w-full px-4 py-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none transition-colors placeholder:${themeClasses.textMuted} shadow-sm`}
+              className={`w-full px-4 py-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none transition-colors placeholder:${themeClasses.textMuted} shadow-sm text-base`}
               rows={1}
               style={{ minHeight: "44px", maxHeight: "120px" }}
               disabled={isSending}
@@ -487,7 +571,7 @@ export function ChatInterface({
         }
         confirmText="Delete Message"
         isLoading={isProcessing}
-        requiresTyping={false} // Don't require typing for message deletion
+        requiresTyping={false}
       />
     </div>
   );

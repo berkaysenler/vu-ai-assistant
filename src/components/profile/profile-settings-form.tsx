@@ -1,4 +1,4 @@
-// src/components/profile/profile-settings-form.tsx (FIXED - Immediate display name updates)
+// src/components/profile/profile-settings-form.tsx (FIXED - Centered sections in modal)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -87,7 +87,7 @@ export function ProfileSettingsForm() {
 
   const themeClasses = getThemeClasses();
 
-  // FIXED: Better initialization and sync with user data
+  // Initialize form data
   useEffect(() => {
     if (user) {
       console.log("Syncing form data with user:", user);
@@ -98,7 +98,7 @@ export function ProfileSettingsForm() {
         theme: user.theme || "blue",
       }));
     }
-  }, [user]); // This will trigger whenever user data changes
+  }, [user]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -117,11 +117,10 @@ export function ProfileSettingsForm() {
     }
   };
 
-  // FIXED: Handle theme change immediately without page refresh
+  // Handle theme change immediately
   const handleThemeChange = (newTheme: string) => {
     console.log("Theme changing to:", newTheme);
     setFormData((prev) => ({ ...prev, theme: newTheme }));
-    // Apply theme immediately in the UI
     setColorTheme(newTheme as any);
   };
 
@@ -231,19 +230,15 @@ export function ProfileSettingsForm() {
           confirmPassword: "",
         }));
 
-        // FIXED: Force immediate user data refresh and UI update
+        // Force immediate user data refresh and UI update
         console.log("Profile updated successfully, refreshing user data...");
-
-        // First, refresh the user data from the server
         await refreshUser();
 
-        // Then, force a small delay to ensure the user context has updated
         setTimeout(() => {
           console.log("User data should now be updated");
-          // The useEffect above will automatically sync the form data when user changes
         }, 100);
 
-        // FIXED: Also trigger a window event to notify other components
+        // Trigger window event to notify other components
         window.dispatchEvent(
           new CustomEvent("userProfileUpdated", {
             detail: {
@@ -265,9 +260,9 @@ export function ProfileSettingsForm() {
 
   if (userLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-12">
         <div
-          className={`animate-spin rounded-full h-8 w-8 border-b-2 ${themeClasses.primary.replace("bg-", "border-")}`}
+          className={`animate-spin rounded-full h-10 w-10 border-b-2 ${themeClasses.primary.replace("bg-", "border-")}`}
         ></div>
       </div>
     );
@@ -275,8 +270,10 @@ export function ProfileSettingsForm() {
 
   if (!user) {
     return (
-      <div className="text-center py-8">
-        <p className={`${themeClasses.error}`}>Unable to load user data</p>
+      <div className="text-center py-12">
+        <p className={`${themeClasses.error} text-lg`}>
+          Unable to load user data
+        </p>
       </div>
     );
   }
@@ -285,320 +282,347 @@ export function ProfileSettingsForm() {
     formData.email.toLowerCase() !== user.email.toLowerCase();
 
   return (
-    <div className="max-w-2xl">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Success Message */}
-        {successMessage && (
-          <div
-            className={`p-4 text-sm ${themeClasses.successLight} border rounded-md`}
-          >
-            {successMessage}
-          </div>
-        )}
-
-        {/* General Error */}
-        {errors.general && (
-          <div
-            className={`p-4 text-sm ${themeClasses.errorLight} border border-red-200 dark:border-red-800/30 rounded-md`}
-          >
-            {errors.general}
-          </div>
-        )}
-
-        {/* Personal Information Section */}
-        <div className={`${themeClasses.card} p-6 rounded-lg border`}>
-          <h3 className={`text-lg font-medium ${themeClasses.text} mb-4`}>
-            Personal Information
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="displayName"
-                className={`block text-sm font-medium ${themeClasses.text} mb-1`}
+    // FIXED: Centered container with proper max width
+    <div className="flex justify-center">
+      <div className="w-full max-w-2xl mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Success Message */}
+          {successMessage && (
+            <div className="text-center">
+              <div
+                className={`inline-block p-4 text-sm ${themeClasses.successLight} border rounded-lg`}
               >
-                Display Name
-              </label>
-              <Input
-                id="displayName"
-                name="displayName"
-                type="text"
-                value={formData.displayName}
-                onChange={handleInputChange}
-                error={errors.displayName}
-                placeholder="Enter your display name"
-              />
-              {/* FIXED: Show current value for debugging */}
-              <p className={`mt-1 text-xs ${themeClasses.textMuted}`}>
-                Current: {user.displayName || user.fullName}
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className={`block text-sm font-medium ${themeClasses.text} mb-1`}
-              >
-                Email Address
-              </label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                error={errors.email}
-                placeholder="Enter your email address"
-              />
-              {isEmailChanged && (
-                <p className={`mt-1 text-xs ${themeClasses.warning}`}>
-                  ⚠️ Changing your email will require verification
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Email Change Password Field */}
-          {isEmailChanged && (
-            <div className="mt-4">
-              <label
-                htmlFor="emailChangePassword"
-                className={`block text-sm font-medium ${themeClasses.text} mb-1`}
-              >
-                Confirm Password for Email Change
-              </label>
-              <Input
-                id="emailChangePassword"
-                name="emailChangePassword"
-                type="password"
-                value={formData.emailChangePassword}
-                onChange={handleInputChange}
-                error={errors.emailChangePassword}
-                placeholder="Enter your current password to confirm email change"
-              />
-              <p className={`mt-1 text-xs ${themeClasses.textMuted}`}>
-                For security, we need your password to change your email address
-              </p>
+                ✅ {successMessage}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Theme & Appearance Section */}
-        <div className={`${themeClasses.card} p-6 rounded-lg border`}>
-          <h3 className={`text-lg font-medium ${themeClasses.text} mb-4`}>
-            Theme & Appearance
-          </h3>
-
-          {/* Current Theme Info */}
-          <div
-            className={`${themeClasses.backgroundSecondary} p-4 rounded-lg mb-4`}
-          >
-            <div className="flex items-center space-x-3">
+          {/* General Error */}
+          {errors.general && (
+            <div className="text-center">
               <div
-                className={`w-4 h-4 ${isDark ? themeOptions.find((t) => t.value === colorTheme)?.darkColor : themeOptions.find((t) => t.value === colorTheme)?.color} rounded-full`}
-              ></div>
-              <div>
-                <p className={`text-sm font-medium ${themeClasses.text}`}>
-                  Current:{" "}
-                  {themeOptions.find((t) => t.value === colorTheme)?.name} •{" "}
-                  {isDark ? "Dark" : "Light"}
-                </p>
-                <p className={`text-xs ${themeClasses.textMuted}`}>
-                  Theme changes apply immediately
-                </p>
+                className={`inline-block p-4 text-sm ${themeClasses.errorLight} border border-red-200 dark:border-red-800/30 rounded-lg`}
+              >
+                ❌ {errors.general}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Color Theme Selection */}
-          <div className="mb-6">
-            <label
-              className={`block text-sm font-medium ${themeClasses.text} mb-3`}
-            >
-              Color Theme
-            </label>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-              {themeOptions.map((theme) => (
+          {/* Personal Information Section - CENTERED */}
+          <div
+            className={`${themeClasses.card} p-8 rounded-xl border text-center`}
+          >
+            <h3 className={`text-xl font-semibold ${themeClasses.text} mb-6`}>
+              Personal Information
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="text-left">
                 <label
-                  key={theme.value}
-                  className={`relative cursor-pointer rounded-lg p-3 flex flex-col items-center space-y-2 border-2 transition-colors ${
-                    formData.theme === theme.value
-                      ? `${themeClasses.primaryBorder} ${themeClasses.primaryLight}`
-                      : `${themeClasses.border} ${themeClasses.hover}`
-                  }`}
+                  htmlFor="displayName"
+                  className={`block text-sm font-medium ${themeClasses.text} mb-2`}
                 >
-                  <input
-                    type="radio"
-                    name="theme"
-                    value={theme.value}
-                    checked={formData.theme === theme.value}
-                    onChange={(e) => handleThemeChange(e.target.value)}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`w-6 h-6 rounded-full ${isDark ? theme.darkColor : theme.color} shadow-sm`}
-                  ></div>
-                  <span className={`text-xs font-medium ${themeClasses.text}`}>
-                    {theme.name}
-                  </span>
-                  {formData.theme === theme.value && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow-sm">
-                      <svg
-                        className="w-2 h-2 text-white"
-                        fill="currentColor"
-                        viewBox="0 0 8 8"
-                      >
-                        <path d="M6.564.75l-3.59 3.612-1.538-1.55L0 4.26l2.974 2.99L8 2.193z" />
-                      </svg>
-                    </div>
-                  )}
+                  Display Name
                 </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Dark Mode Selection */}
-          <div>
-            <label
-              className={`block text-sm font-medium ${themeClasses.text} mb-3`}
-            >
-              Brightness Mode
-            </label>
-            <div className="space-y-2">
-              {[
-                {
-                  value: "light",
-                  name: "Light",
-                  icon: "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",
-                },
-                {
-                  value: "dark",
-                  name: "Dark",
-                  icon: "M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z",
-                },
-                {
-                  value: "system",
-                  name: "System",
-                  icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
-                },
-              ].map((mode) => (
-                <label
-                  key={mode.value}
-                  className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                    darkMode === mode.value
-                      ? `${themeClasses.primaryLight} ${themeClasses.primaryText} font-medium`
-                      : `${themeClasses.hover}`
-                  }`}
+                <Input
+                  id="displayName"
+                  name="displayName"
+                  type="text"
+                  value={formData.displayName}
+                  onChange={handleInputChange}
+                  error={errors.displayName}
+                  placeholder="Enter your display name"
+                />
+                <p
+                  className={`mt-1 text-xs ${themeClasses.textMuted} text-center`}
                 >
-                  <input
-                    type="radio"
-                    name="darkMode"
-                    value={mode.value}
-                    checked={darkMode === mode.value}
-                    onChange={(e) => setDarkMode(e.target.value as any)}
-                    className="sr-only"
-                  />
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  Currently: {user.displayName || user.fullName}
+                </p>
+              </div>
+
+              <div className="text-left">
+                <label
+                  htmlFor="email"
+                  className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                >
+                  Email Address
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  error={errors.email}
+                  placeholder="Enter your email address"
+                />
+                {isEmailChanged && (
+                  <p
+                    className={`mt-1 text-xs ${themeClasses.warning} text-center`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d={mode.icon}
-                    />
-                  </svg>
-                  <span className={`text-sm ${themeClasses.text}`}>
-                    {mode.name}
-                  </span>
-                  {darkMode === mode.value && (
-                    <div className="ml-auto w-2 h-2 bg-green-500 rounded-full"></div>
-                  )}
-                </label>
-              ))}
+                    Changing your email will require verification
+                  </p>
+                )}
+              </div>
             </div>
+
+            {/* Email Change Password Field */}
+            {isEmailChanged && (
+              <div className="mt-6">
+                <label
+                  htmlFor="emailChangePassword"
+                  className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                >
+                  Confirm Password for Email Change
+                </label>
+                <div className="max-w-md mx-auto">
+                  <Input
+                    id="emailChangePassword"
+                    name="emailChangePassword"
+                    type="password"
+                    value={formData.emailChangePassword}
+                    onChange={handleInputChange}
+                    error={errors.emailChangePassword}
+                    placeholder="Enter your current password to confirm email change"
+                  />
+                </div>
+                <p
+                  className={`mt-2 text-xs ${themeClasses.textMuted} text-center`}
+                >
+                  For security, we need your password to change your email
+                  address
+                </p>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Password Change Section */}
-        <div className={`${themeClasses.card} p-6 rounded-lg border`}>
-          <h3 className={`text-lg font-medium ${themeClasses.text} mb-4`}>
-            Change Password
-          </h3>
-          <p className={`text-sm ${themeClasses.textMuted} mb-4`}>
-            Leave password fields empty if you don't want to change your
-            password
-          </p>
+          {/* Theme & Appearance Section - CENTERED */}
+          <div
+            className={`${themeClasses.card} p-8 rounded-xl border text-center`}
+          >
+            <h3 className={`text-xl font-semibold ${themeClasses.text} mb-6`}>
+              Theme & Appearance
+            </h3>
 
-          <div className="space-y-4">
+            {/* Current Theme Info */}
+            <div
+              className={`${themeClasses.backgroundSecondary} p-4 rounded-lg mb-6 max-w-md mx-auto`}
+            >
+              <div className="flex items-center justify-center space-x-3">
+                <div
+                  className={`w-5 h-5 ${isDark ? themeOptions.find((t) => t.value === colorTheme)?.darkColor : themeOptions.find((t) => t.value === colorTheme)?.color} rounded-full`}
+                ></div>
+                <div>
+                  <p className={`text-sm font-medium ${themeClasses.text}`}>
+                    Current:{" "}
+                    {themeOptions.find((t) => t.value === colorTheme)?.name} •{" "}
+                    {isDark ? "Dark" : "Light"}
+                  </p>
+                  <p className={`text-xs ${themeClasses.textMuted}`}>
+                    Theme changes apply immediately
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Color Theme Selection - CENTERED */}
+            <div className="mb-8">
+              <label
+                className={`block text-sm font-medium ${themeClasses.text} mb-4`}
+              >
+                Color Theme
+              </label>
+              <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
+                {themeOptions.map((theme) => (
+                  <label
+                    key={theme.value}
+                    className={`relative cursor-pointer rounded-lg p-4 flex flex-col items-center space-y-2 border-2 transition-colors ${
+                      formData.theme === theme.value
+                        ? `${themeClasses.primaryBorder} ${themeClasses.primaryLight}`
+                        : `${themeClasses.border} ${themeClasses.hover}`
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="theme"
+                      value={theme.value}
+                      checked={formData.theme === theme.value}
+                      onChange={(e) => handleThemeChange(e.target.value)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-8 h-8 rounded-full ${isDark ? theme.darkColor : theme.color} shadow-md`}
+                    ></div>
+                    <span
+                      className={`text-sm font-medium ${themeClasses.text}`}
+                    >
+                      {theme.name}
+                    </span>
+                    {formData.theme === theme.value && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 8 8"
+                        >
+                          <path d="M6.564.75l-3.59 3.612-1.538-1.55L0 4.26l2.974 2.99L8 2.193z" />
+                        </svg>
+                      </div>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Dark Mode Selection - CENTERED */}
             <div>
               <label
-                htmlFor="currentPassword"
-                className={`block text-sm font-medium ${themeClasses.text} mb-1`}
+                className={`block text-sm font-medium ${themeClasses.text} mb-4`}
               >
-                Current Password
+                Brightness Mode
               </label>
-              <Input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                value={formData.currentPassword}
-                onChange={handleInputChange}
-                error={errors.currentPassword}
-                placeholder="Enter your current password"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="newPassword"
-                  className={`block text-sm font-medium ${themeClasses.text} mb-1`}
-                >
-                  New Password
-                </label>
-                <Input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  value={formData.newPassword}
-                  onChange={handleInputChange}
-                  error={errors.newPassword}
-                  placeholder="Enter new password"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className={`block text-sm font-medium ${themeClasses.text} mb-1`}
-                >
-                  Confirm New Password
-                </label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  error={errors.confirmPassword}
-                  placeholder="Confirm new password"
-                />
+              <div className="space-y-2 max-w-sm mx-auto">
+                {[
+                  {
+                    value: "light",
+                    name: "Light",
+                    icon: "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",
+                  },
+                  {
+                    value: "dark",
+                    name: "Dark",
+                    icon: "M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z",
+                  },
+                  {
+                    value: "system",
+                    name: "System",
+                    icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+                  },
+                ].map((mode) => (
+                  <label
+                    key={mode.value}
+                    className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                      darkMode === mode.value
+                        ? `${themeClasses.primaryLight} ${themeClasses.primaryText} font-medium`
+                        : `${themeClasses.hover}`
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="darkMode"
+                      value={mode.value}
+                      checked={darkMode === mode.value}
+                      onChange={(e) => setDarkMode(e.target.value as any)}
+                      className="sr-only"
+                    />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d={mode.icon}
+                      />
+                    </svg>
+                    <span className={`text-sm ${themeClasses.text}`}>
+                      {mode.name}
+                    </span>
+                    {darkMode === mode.value && (
+                      <div className="ml-auto w-3 h-3 bg-green-500 rounded-full"></div>
+                    )}
+                  </label>
+                ))}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Submit Button */}
-        <div className="flex justify-end">
-          <Button type="submit" loading={isLoading} className="px-8">
-            Save Changes
-          </Button>
-        </div>
-      </form>
+          {/* Password Change Section - CENTERED */}
+          <div
+            className={`${themeClasses.card} p-8 rounded-xl border text-center`}
+          >
+            <h3 className={`text-xl font-semibold ${themeClasses.text} mb-6`}>
+              Change Password
+            </h3>
+            <p className={`text-sm ${themeClasses.textMuted} mb-6`}>
+              Leave password fields empty if you don't want to change your
+              password
+            </p>
+
+            <div className="space-y-6 max-w-lg mx-auto">
+              <div className="text-left">
+                <label
+                  htmlFor="currentPassword"
+                  className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                >
+                  Current Password
+                </label>
+                <Input
+                  id="currentPassword"
+                  name="currentPassword"
+                  type="password"
+                  value={formData.currentPassword}
+                  onChange={handleInputChange}
+                  error={errors.currentPassword}
+                  placeholder="Enter your current password"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="text-left">
+                  <label
+                    htmlFor="newPassword"
+                    className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                  >
+                    New Password
+                  </label>
+                  <Input
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    value={formData.newPassword}
+                    onChange={handleInputChange}
+                    error={errors.newPassword}
+                    placeholder="Enter new password"
+                  />
+                </div>
+
+                <div className="text-left">
+                  <label
+                    htmlFor="confirmPassword"
+                    className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                  >
+                    Confirm New Password
+                  </label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    error={errors.confirmPassword}
+                    placeholder="Confirm new password"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button - CENTERED */}
+          <div className="flex justify-center pt-4">
+            <Button
+              type="submit"
+              loading={isLoading}
+              className="px-12 py-3 text-base font-semibold"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

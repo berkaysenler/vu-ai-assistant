@@ -1,4 +1,4 @@
-// src/components/profile/profile-overlay.tsx (UPDATED - Added delete functionality)
+// src/components/profile/profile-overlay.tsx (FIXED - Centered modal content)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -56,7 +56,7 @@ export function ProfileOverlay({
     // Wait for animation to complete before actually closing
     setTimeout(() => {
       onClose();
-    }, 300); // Match the animation duration
+    }, 300);
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -77,7 +77,6 @@ export function ProfileOverlay({
 
       if (data.success) {
         alert("All chats deleted successfully!");
-        // Refresh the page to update the chat list
         window.location.reload();
       } else {
         alert(`Error: ${data.message}`);
@@ -134,9 +133,9 @@ export function ProfileOverlay({
         }`}
         onClick={handleBackdropClick}
       >
-        {/* Overlay Content */}
+        {/* FIXED: Centered modal with better max width and spacing */}
         <div
-          className={`w-full max-w-4xl ${themeClasses.background} rounded-2xl shadow-2xl transform transition-all duration-300 ease-out ${
+          className={`w-full max-w-5xl rounded-2xl shadow-2xl transform transition-all duration-300 ease-out ${
             isAnimating
               ? "scale-100 opacity-100 translate-y-0"
               : "scale-95 opacity-0 translate-y-4"
@@ -151,11 +150,11 @@ export function ProfileOverlay({
               : "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
           }}
         >
-          {/* Header with Close Button */}
+          {/* Header with Close Button - CENTERED */}
           <div
-            className={`flex items-center justify-between p-6 ${themeClasses.borderLight} border-b`}
+            className={`flex items-center justify-between p-6 ${themeClasses.borderLight} border-b text-center`}
           >
-            <div>
+            <div className="flex-1">
               <h1 className={`text-2xl font-bold ${themeClasses.text}`}>
                 Profile Settings
               </h1>
@@ -167,7 +166,7 @@ export function ProfileOverlay({
             {/* Enhanced Close Button */}
             <button
               onClick={handleClose}
-              className={`p-2 rounded-full ${themeClasses.hover} transition-colors group`}
+              className={`p-2 rounded-full ${themeClasses.hover} transition-colors group ml-4`}
               title="Close profile settings"
             >
               <svg
@@ -186,89 +185,109 @@ export function ProfileOverlay({
             </button>
           </div>
 
-          {/* Scrollable Content */}
+          {/* Scrollable Content - CENTERED */}
           <div
             className={`overflow-y-auto ${themeClasses.background}`}
             style={{ maxHeight: "calc(90vh - 100px)" }}
           >
-            <div className="p-6 space-y-6">
-              {/* Profile Settings Form */}
+            <div className="p-8 space-y-8">
+              {/* Profile Settings Form - Now properly centered */}
               <ProfileSettingsForm />
 
-              {/* Account Information Card */}
-              <div className={`${themeClasses.card} p-6 rounded-lg border`}>
-                <h3 className={`text-lg font-medium ${themeClasses.text} mb-4`}>
-                  Account Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                  <div>
-                    <dt className={`font-medium ${themeClasses.textMuted}`}>
-                      Account Status
-                    </dt>
-                    <dd className="mt-1">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${themeClasses.successLight}`}
+              {/* Account Information Card - CENTERED */}
+              <div className="flex justify-center">
+                <div
+                  className={`w-full max-w-2xl ${themeClasses.card} p-8 rounded-xl border text-center`}
+                >
+                  <h3
+                    className={`text-xl font-semibold ${themeClasses.text} mb-6`}
+                  >
+                    Account Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                    <div>
+                      <dt
+                        className={`font-medium ${themeClasses.textMuted} mb-2`}
                       >
-                        Verified
-                      </span>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className={`font-medium ${themeClasses.textMuted}`}>
-                      Member Since
-                    </dt>
-                    <dd className={`mt-1 ${themeClasses.text}`}>March 2025</dd>
-                  </div>
-                  <div>
-                    <dt className={`font-medium ${themeClasses.textMuted}`}>
-                      Last Login
-                    </dt>
-                    <dd className={`mt-1 ${themeClasses.text}`}>Today</dd>
-                  </div>
-                  <div>
-                    <dt className={`font-medium ${themeClasses.textMuted}`}>
-                      Total Chats
-                    </dt>
-                    <dd className={`mt-1 ${themeClasses.text}`}>
-                      {chats.length}
-                    </dd>
+                        Account Status
+                      </dt>
+                      <dd className="flex justify-center">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${themeClasses.successLight}`}
+                        >
+                          ✓ Verified
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt
+                        className={`font-medium ${themeClasses.textMuted} mb-2`}
+                      >
+                        Member Since
+                      </dt>
+                      <dd className={`${themeClasses.text} font-medium`}>
+                        March 2025
+                      </dd>
+                    </div>
+                    <div>
+                      <dt
+                        className={`font-medium ${themeClasses.textMuted} mb-2`}
+                      >
+                        Last Login
+                      </dt>
+                      <dd className={`${themeClasses.text} font-medium`}>
+                        Today
+                      </dd>
+                    </div>
+                    <div>
+                      <dt
+                        className={`font-medium ${themeClasses.textMuted} mb-2`}
+                      >
+                        Total Chats
+                      </dt>
+                      <dd className={`${themeClasses.text} font-medium`}>
+                        {chats.length}
+                      </dd>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Danger Zone */}
-              <div
-                className={`${themeClasses.background} p-6 rounded-lg border-2 border-red-200 dark:border-red-800/50`}
-              >
-                <h3
-                  className={`text-lg font-medium ${themeClasses.error} mb-2`}
+              {/* Danger Zone - CENTERED */}
+              <div className="flex justify-center">
+                <div
+                  className={`w-full max-w-2xl ${themeClasses.background} p-8 rounded-xl border-2 border-red-200 dark:border-red-800/50 text-center`}
                 >
-                  Danger Zone
-                </h3>
-                <p className={`text-sm ${themeClasses.textMuted} mb-4`}>
-                  These actions are permanent and cannot be undone.
-                </p>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setShowDeleteChatsModal(true)}
-                    disabled={isDeletingChats || chats.length === 0}
-                    className={`px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                  <h3
+                    className={`text-xl font-semibold ${themeClasses.error} mb-2`}
                   >
-                    {isDeletingChats
-                      ? "Deleting..."
-                      : `Delete All Chat History (${chats.length} chats)`}
-                  </button>
+                    Danger Zone
+                  </h3>
+                  <p className={`text-sm ${themeClasses.textMuted} mb-6`}>
+                    These actions are permanent and cannot be undone.
+                  </p>
 
-                  <button
-                    onClick={() => setShowDeleteAccountModal(true)}
-                    disabled={isDeletingAccount}
-                    className={`px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {isDeletingAccount
-                      ? "Deleting Account..."
-                      : "Delete Account"}
-                  </button>
+                  <div className="space-y-4 max-w-md mx-auto">
+                    <button
+                      onClick={() => setShowDeleteChatsModal(true)}
+                      disabled={isDeletingChats || chats.length === 0}
+                      className={`w-full px-6 py-3 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {isDeletingChats
+                        ? " Deleting..."
+                        : ` Delete All Chat History (${chats.length} chats)`}
+                    </button>
+
+                    <button
+                      onClick={() => setShowDeleteAccountModal(true)}
+                      disabled={isDeletingAccount}
+                      className={`w-full px-6 py-3 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {isDeletingAccount
+                        ? "Deleting Account..."
+                        : "Delete Account"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

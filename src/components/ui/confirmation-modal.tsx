@@ -1,8 +1,8 @@
-// src/components/ui/confirmation-modal.tsx
+// src/components/ui/confirmation-modal.tsx (FIXED - Full theme integration)
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "./button";
+import { useTheme } from "@/lib/context/theme-context";
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ interface ConfirmationModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  type?: "danger" | "warning" | "info";
+  type?: "danger" | "warning" | "info" | "success";
   requiresTyping?: string; // If provided, user must type this exact text to confirm
   isLoading?: boolean;
 }
@@ -25,12 +25,16 @@ export function ConfirmationModal({
   message,
   confirmText = "Confirm",
   cancelText = "Cancel",
-  type = "danger",
+  type = "info",
   requiresTyping,
   isLoading = false,
 }: ConfirmationModalProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [typedText, setTypedText] = useState("");
+
+  // FIXED: Add theme integration
+  const { getThemeClasses, isDark } = useTheme();
+  const themeClasses = getThemeClasses();
 
   useEffect(() => {
     if (isOpen) {
@@ -49,6 +53,8 @@ export function ConfirmationModal({
   }, [isOpen]);
 
   const handleClose = () => {
+    if (isLoading) return; // Don't allow closing while loading
+
     setIsAnimating(false);
     setTypedText("");
     // Wait for animation to complete before actually closing
@@ -79,11 +85,13 @@ export function ConfirmationModal({
     }
   };
 
+  // FIXED: Get type-specific styles with theme integration
   const getTypeStyles = () => {
     switch (type) {
       case "danger":
         return {
           headerBg: "bg-red-600",
+          headerBgDark: "bg-red-500",
           icon: (
             <svg
               className="w-6 h-6 text-white"
@@ -99,11 +107,12 @@ export function ConfirmationModal({
               />
             </svg>
           ),
-          confirmBg: "bg-red-600 hover:bg-red-700",
+          confirmBg: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
         };
       case "warning":
         return {
           headerBg: "bg-orange-600",
+          headerBgDark: "bg-orange-500",
           icon: (
             <svg
               className="w-6 h-6 text-white"
@@ -119,11 +128,33 @@ export function ConfirmationModal({
               />
             </svg>
           ),
-          confirmBg: "bg-orange-600 hover:bg-orange-700",
+          confirmBg: "bg-orange-600 hover:bg-orange-700 focus:ring-orange-500",
+        };
+      case "success":
+        return {
+          headerBg: "bg-green-600",
+          headerBgDark: "bg-green-500",
+          icon: (
+            <svg
+              className="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          ),
+          confirmBg: "bg-green-600 hover:bg-green-700 focus:ring-green-500",
         };
       default: // info
         return {
-          headerBg: "bg-blue-600",
+          headerBg: themeClasses.primary,
+          headerBgDark: themeClasses.primary,
           icon: (
             <svg
               className="w-6 h-6 text-white"
@@ -139,7 +170,7 @@ export function ConfirmationModal({
               />
             </svg>
           ),
-          confirmBg: "bg-blue-600 hover:bg-blue-700",
+          confirmBg: `${themeClasses.primary} ${themeClasses.primaryHover} ${themeClasses.primaryFocus}`,
         };
     }
   };
@@ -160,59 +191,86 @@ export function ConfirmationModal({
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
-      {/* Modal Content */}
+      {/* FIXED: Modal Content with theme styling */}
       <div
-        className={`w-full max-w-md bg-white rounded-xl shadow-2xl transform transition-all duration-200 ease-out ${
+        className={`w-full max-w-md rounded-xl shadow-2xl transform transition-all duration-200 ease-out ${
           isAnimating
             ? "scale-100 opacity-100 translate-y-0"
             : "scale-95 opacity-0 translate-y-4"
         }`}
+        style={{
+          // FIXED: Ensure solid background in dark mode
+          backgroundColor: isDark ? "rgb(31, 41, 55)" : "white",
+          boxShadow: isDark
+            ? "0 25px 50px -12px rgba(0, 0, 0, 0.7)"
+            : "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        }}
       >
-        {/* Header */}
+        {/* FIXED: Header with proper theme integration */}
         <div
-          className={`${typeStyles.headerBg} px-6 py-4 rounded-t-xl flex items-center space-x-3`}
+          className={`px-6 py-4 rounded-t-xl flex items-center space-x-3 ${
+            isDark ? typeStyles.headerBgDark : typeStyles.headerBg
+          }`}
         >
           {typeStyles.icon}
           <h3 className="text-lg font-semibold text-white">{title}</h3>
         </div>
 
-        {/* Content */}
+        {/* FIXED: Content with theme colors */}
         <div className="p-6">
-          <p className="text-gray-700 mb-4 leading-relaxed">{message}</p>
+          <p className={`${themeClasses.text} mb-4 leading-relaxed text-base`}>
+            {message}
+          </p>
 
-          {/* Typing confirmation if required */}
+          {/* FIXED: Typing confirmation if required */}
           {requiresTyping && (
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">
-                To confirm, please type <strong>"{requiresTyping}"</strong>{" "}
+              <p className={`text-sm ${themeClasses.textMuted} mb-3`}>
+                To confirm, please type{" "}
+                <strong
+                  className={`font-mono ${themeClasses.text} bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded`}
+                >
+                  "{requiresTyping}"
+                </strong>{" "}
                 below:
               </p>
               <input
                 type="text"
                 value={typedText}
                 onChange={(e) => setTypedText(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-3 py-2 ${themeClasses.border} border rounded-md ${themeClasses.text} ${themeClasses.primaryFocus} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                style={{
+                  // FIXED: Ensure solid background for input in dark mode
+                  backgroundColor: isDark ? "rgb(55, 65, 81)" : "white",
+                }}
                 placeholder={`Type "${requiresTyping}" here`}
                 disabled={isLoading}
                 autoFocus
               />
+              {typedText && typedText !== requiresTyping && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  Please type exactly: "{requiresTyping}"
+                </p>
+              )}
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* FIXED: Action Buttons with theme colors */}
           <div className="flex space-x-3 pt-4">
-            <Button
-              variant="outline"
+            {/* Cancel Button */}
+            <button
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1"
+              className={`flex-1 px-4 py-3 text-base font-medium ${themeClasses.textSecondary} ${themeClasses.border} border rounded-lg ${themeClasses.hover} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {cancelText}
-            </Button>
+            </button>
+
+            {/* Confirm Button */}
             <button
               onClick={handleConfirm}
               disabled={!canConfirm || isLoading}
-              className={`flex-1 px-4 py-2 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${typeStyles.confirmBg} flex items-center justify-center space-x-2`}
+              className={`flex-1 px-4 py-3 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${typeStyles.confirmBg}`}
             >
               {isLoading && (
                 <svg
