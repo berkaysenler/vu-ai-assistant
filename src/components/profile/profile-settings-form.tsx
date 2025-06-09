@@ -1,4 +1,4 @@
-// src/components/profile/profile-settings-form.tsx (FIXED - Immediate updates without refresh)
+// src/components/profile/profile-settings-form.tsx (FIXED - Immediate display name updates)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -87,9 +87,10 @@ export function ProfileSettingsForm() {
 
   const themeClasses = getThemeClasses();
 
-  // Initialize form with user data
+  // FIXED: Better initialization and sync with user data
   useEffect(() => {
     if (user) {
+      console.log("Syncing form data with user:", user);
       setFormData((prev) => ({
         ...prev,
         displayName: user.displayName || user.fullName,
@@ -97,7 +98,7 @@ export function ProfileSettingsForm() {
         theme: user.theme || "blue",
       }));
     }
-  }, [user]);
+  }, [user]); // This will trigger whenever user data changes
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -118,6 +119,7 @@ export function ProfileSettingsForm() {
 
   // FIXED: Handle theme change immediately without page refresh
   const handleThemeChange = (newTheme: string) => {
+    console.log("Theme changing to:", newTheme);
     setFormData((prev) => ({ ...prev, theme: newTheme }));
     // Apply theme immediately in the UI
     setColorTheme(newTheme as any);
@@ -229,15 +231,27 @@ export function ProfileSettingsForm() {
           confirmPassword: "",
         }));
 
-        // FIXED: Force refresh user data and wait for it to complete
+        // FIXED: Force immediate user data refresh and UI update
         console.log("Profile updated successfully, refreshing user data...");
-        await refreshUser();
-        console.log("User data refresh completed");
 
-        // Force a small delay to ensure state propagation
+        // First, refresh the user data from the server
+        await refreshUser();
+
+        // Then, force a small delay to ensure the user context has updated
         setTimeout(() => {
-          console.log("Updated user:", user);
+          console.log("User data should now be updated");
+          // The useEffect above will automatically sync the form data when user changes
         }, 100);
+
+        // FIXED: Also trigger a window event to notify other components
+        window.dispatchEvent(
+          new CustomEvent("userProfileUpdated", {
+            detail: {
+              displayName: formData.displayName.trim(),
+              theme: formData.theme,
+            },
+          })
+        );
       } else {
         setErrors({ general: data.message });
       }
@@ -314,6 +328,10 @@ export function ProfileSettingsForm() {
                 error={errors.displayName}
                 placeholder="Enter your display name"
               />
+              {/* FIXED: Show current value for debugging */}
+              <p className={`mt-1 text-xs ${themeClasses.textMuted}`}>
+                Current: {user.displayName || user.fullName}
+              </p>
             </div>
 
             <div>

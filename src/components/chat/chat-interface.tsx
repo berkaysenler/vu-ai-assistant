@@ -1,4 +1,4 @@
-// src/components/chat/chat-interface.tsx (COMPLETE - Fixed all errors)
+// src/components/chat/chat-interface.tsx (COMPLETE - Fixed with optimistic UI)
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -179,6 +179,14 @@ export function ChatInterface({
     return content.slice(0, maxLength).trim() + "...";
   };
 
+  // FIXED: Check if we should show the AI thinking indicator (only for quick actions)
+  const shouldShowThinking = () => {
+    if (displayMessages.length === 0) return false;
+    if (isSending) return false; // Don't show thinking if we're actively sending
+    const lastMessage = displayMessages[displayMessages.length - 1];
+    return lastMessage.role === "USER" && lastMessage.id.startsWith("temp-");
+  };
+
   return (
     <div className={`flex flex-col h-full ${themeClasses.background}`}>
       {/* Messages Area */}
@@ -238,8 +246,9 @@ export function ChatInterface({
                         : `${themeClasses.card} ${themeClasses.text} shadow-sm`
                     }`}
                   >
-                    {/* Message Actions (only for user messages) */}
+                    {/* Message Actions (only for user messages and not temporary) */}
                     {msg.role === "USER" &&
+                      !msg.id.startsWith("temp-") &&
                       (onEditMessage || onDeleteMessage) && (
                         <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="flex space-x-1">
@@ -322,24 +331,53 @@ export function ChatInterface({
                       </div>
                     )}
 
-                    {/* Message Time */}
-                    {editingMessage?.id !== msg.id && (
-                      <div
-                        className={`text-xs mt-2 ${
-                          msg.role === "USER"
-                            ? "text-white/70"
-                            : themeClasses.textMuted
-                        }`}
-                      >
-                        {formatMessageTime(msg.createdAt)}
-                      </div>
-                    )}
+                    {/* Message Time (not for temporary messages) */}
+                    {editingMessage?.id !== msg.id &&
+                      !msg.id.startsWith("temp-") && (
+                        <div
+                          className={`text-xs mt-2 ${
+                            msg.role === "USER"
+                              ? "text-white/70"
+                              : themeClasses.textMuted
+                          }`}
+                        >
+                          {formatMessageTime(msg.createdAt)}
+                        </div>
+                      )}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Loading indicator when sending */}
+            {/* FIXED: Show AI thinking indicator when last message is temporary user message */}
+            {shouldShowThinking() && (
+              <div className="flex justify-start mt-6">
+                <div
+                  className={`${themeClasses.card} max-w-2xl rounded-lg px-4 py-3 shadow-sm`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div
+                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                      ></div>
+                      <div
+                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                    </div>
+                    <span className={`text-sm ${themeClasses.textMuted}`}>
+                      VU Assistant is thinking...
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Loading indicator when sending regular messages */}
             {isSending && (
               <div className="flex justify-start">
                 <div
@@ -393,6 +431,7 @@ export function ChatInterface({
               rows={1}
               style={{ minHeight: "44px", maxHeight: "120px" }}
               disabled={isSending}
+              maxLength={500}
             />
           </div>
           <button

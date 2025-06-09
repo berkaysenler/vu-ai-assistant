@@ -1,4 +1,4 @@
-// src/lib/hooks/use-chats.ts (UPDATED - REPLACE YOUR EXISTING FILE)
+// src/lib/hooks/use-chats.ts (FIXED - Reliable initial message sending)
 import { useState, useEffect } from "react";
 
 export interface Chat {
@@ -87,49 +87,94 @@ export function useChats(): UseChatsResult {
     }
   };
 
-  // Create new chat with optional initial message
+  // FIXED: Simple optimistic UI - show user message immediately
   const createNewChat = async (initialMessage?: string) => {
     try {
-      setIsLoading(true);
+      console.log("Creating new chat with initial message:", initialMessage);
+
+      // Step 1: Create the chat (with or without welcome message based on initial message)
+      const requestBody = initialMessage
+        ? { initialMessage: initialMessage.trim() }
+        : {};
+
       const response = await fetch("/api/chats", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include",
+        body: JSON.stringify(requestBody),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          const newChat = data.data.chat;
-          // Add to chats list
-          setChats((prev) => [newChat, ...prev]);
-          // Automatically select the new chat
-          await selectChat(newChat.id);
-
-          // If there's an initial message, send it
-          if (initialMessage && initialMessage.trim()) {
-            // Wait a moment for the chat to be properly selected
-            setTimeout(async () => {
-              try {
-                await sendMessage(initialMessage.trim());
-              } catch (err) {
-                console.error("Error sending initial message:", err);
-              }
-            }, 500);
-          }
-
-          // Return the new chat ID so it can be used for navigation
-          return newChat.id;
-        } else {
-          setError(data.message);
-        }
-      } else {
-        setError("Failed to create chat");
+      if (!response.ok) {
+        throw new Error("Failed to create chat");
       }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+
+      const newChat = data.data.chat;
+      console.log("New chat created:", newChat.id);
+
+      // Step 2: Add to chats list immediately
+      setChats((prev) => [newChat, ...prev]);
+
+      // Step 3: If there's an initial message, show it immediately
+      if (initialMessage && initialMessage.trim()) {
+        console.log("Showing user message immediately:", initialMessage.trim());
+
+        // Create optimistic user message
+        const optimisticUserMessage: Message = {
+          id: "temp-user-" + Date.now(),
+          content: initialMessage.trim(),
+          role: "USER",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Set active chat with user message immediately
+        setActiveChat({
+          ...newChat,
+          messages: [optimisticUserMessage],
+        });
+
+        // Send message in background and update when ready
+        setTimeout(async () => {
+          try {
+            const messageResponse = await fetch(
+              `/api/chats/${newChat.id}/messages`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({ message: initialMessage.trim() }),
+              }
+            );
+
+            if (messageResponse.ok) {
+              console.log("Message sent successfully, updating chat...");
+              await fetchChat(newChat.id);
+              await fetchChats();
+            }
+          } catch (error) {
+            console.error("Error sending message:", error);
+            await fetchChat(newChat.id);
+          }
+        }, 100);
+      } else {
+        // No initial message - fetch normally (will have welcome message)
+        await fetchChat(newChat.id);
+      }
+
+      return newChat.id;
     } catch (err) {
       setError("An error occurred while creating chat");
       console.error("Create chat error:", err);
-    } finally {
-      setIsLoading(false);
+      return undefined;
     }
   };
 
@@ -235,9 +280,9 @@ export function useChats(): UseChatsResult {
     }
 
     try {
-      // Optimistically add user message to UI
+      // FIXED: Use regular optimistic message (not temp-) for manual sending
       const userMessage: Message = {
-        id: "temp-" + Date.now(),
+        id: "optimistic-" + Date.now(), // Use different prefix to avoid confusion with quick actions
         content: message,
         role: "USER",
         createdAt: new Date().toISOString(),

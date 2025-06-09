@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx (UPDATED with theme integration and new chat interface)
+// src/app/dashboard/page.tsx (FIXED - Quick actions now send messages)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -30,6 +30,9 @@ export default function DashboardPage() {
   const [quickMessage, setQuickMessage] = useState("");
   const [isQuickSending, setIsQuickSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // FIXED: Add state for quick action processing
+  const [isQuickActionProcessing, setIsQuickActionProcessing] = useState(false);
 
   const themeClasses = getThemeClasses();
 
@@ -66,6 +69,29 @@ export default function DashboardPage() {
       setQuickMessage(messageToSend);
     } finally {
       setIsQuickSending(false);
+    }
+  };
+
+  // FIXED: Enhanced quick action handling with immediate UI feedback
+  const handleQuickAction = async (actionMessage: string) => {
+    if (isQuickActionProcessing) return; // Prevent multiple clicks
+
+    setIsQuickActionProcessing(true);
+
+    try {
+      console.log("Quick action triggered with message:", actionMessage);
+      // Create new chat with the action message - this will show user message immediately
+      const newChatId = await createNewChat(actionMessage);
+
+      if (newChatId) {
+        console.log("Quick action initiated successfully");
+        // The UI will show the user message immediately and AI typing indicator
+        // AI response will appear when the background API call completes
+      }
+    } catch (error) {
+      console.error("Quick action error:", error);
+    } finally {
+      setIsQuickActionProcessing(false);
     }
   };
 
@@ -143,40 +169,6 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Enhanced Features Highlight */}
-          {/* <div
-            className={`mb-8 p-6 ${themeClasses.primaryLight} rounded-xl ${themeClasses.primaryBorder} border`}
-          >
-            <h3 className={`text-lg font-semibold ${themeClasses.text} mb-3`}>
-              ✨ New Features Available
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              {[
-                "Edit and delete your messages",
-                "Rename your chat sessions",
-                "Search within individual chats",
-                "Global search across all chats",
-              ].map((feature, index) => (
-                <div key={index} className="flex items-start space-x-2">
-                  <svg
-                    className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className={themeClasses.textSecondary}>{feature}</span>
-                </div>
-              ))}
-            </div>
-          </div> */}
-
           {/* Quick Start Chat */}
           <div className="w-full max-w-2xl mb-8">
             <div className={`${themeClasses.card} rounded-xl shadow-lg p-6`}>
@@ -193,7 +185,7 @@ export default function DashboardPage() {
                     placeholder="Ask me anything about Victoria University..."
                     className={`w-full px-4 py-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none text-base placeholder:${themeClasses.textMuted}`}
                     rows={3}
-                    disabled={isQuickSending}
+                    disabled={isQuickSending || isQuickActionProcessing}
                     maxLength={500}
                   />
                   <div
@@ -204,7 +196,11 @@ export default function DashboardPage() {
                 </div>
                 <button
                   type="submit"
-                  disabled={!quickMessage.trim() || isQuickSending}
+                  disabled={
+                    !quickMessage.trim() ||
+                    isQuickSending ||
+                    isQuickActionProcessing
+                  }
                   className={`w-full ${themeClasses.primary} text-white px-6 py-3 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed text-base font-medium`}
                 >
                   {isQuickSending ? (
@@ -235,7 +231,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions - FIXED: Now properly send messages */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-4xl mb-8">
             {[
               {
@@ -265,31 +261,31 @@ export default function DashboardPage() {
             ].map((action, index) => (
               <button
                 key={index}
-                onClick={() => {
-                  setQuickMessage(action.message);
-                  setTimeout(() => {
-                    const textarea = document.querySelector("textarea");
-                    textarea?.focus();
-                  }, 100);
-                }}
-                className={`${themeClasses.card} p-6 rounded-lg ${themeClasses.cardHover} transition-all text-left group`}
+                onClick={() => handleQuickAction(action.message)} // FIXED: Now calls handleQuickAction
+                disabled={isQuickActionProcessing || isQuickSending} // FIXED: Disable during processing
+                className={`${themeClasses.card} p-6 rounded-lg ${themeClasses.cardHover} transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <div
-                  className={`w-12 h-12 ${themeClasses.primary} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
+                  className={`w-12 h-12 ${themeClasses.primary} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${isQuickActionProcessing ? "animate-pulse" : ""}`}
                 >
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d={action.icon}
-                    />
-                  </svg>
+                  {/* FIXED: Show loading spinner when processing this specific action */}
+                  {isQuickActionProcessing ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  ) : (
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d={action.icon}
+                      />
+                    </svg>
+                  )}
                 </div>
                 <h4 className={`font-semibold ${themeClasses.text} mb-2`}>
                   {action.title}
@@ -297,6 +293,14 @@ export default function DashboardPage() {
                 <p className={`text-sm ${themeClasses.textSecondary}`}>
                   {action.description}
                 </p>
+                {/* FIXED: Show processing state with more specific message */}
+                {isQuickActionProcessing && (
+                  <p
+                    className={`text-xs ${themeClasses.primaryText} mt-2 font-medium`}
+                  >
+                    Opening chat...
+                  </p>
+                )}
               </button>
             ))}
           </div>

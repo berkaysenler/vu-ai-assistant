@@ -1,4 +1,4 @@
-// src/app/api/chats/route.ts (UPDATED with AI Welcome Message)
+// src/app/api/chats/route.ts (UPDATED - Skip welcome message for initial messages)
 import { NextRequest } from "next/server";
 import { Pool } from "pg";
 import { verifyJWT } from "@/lib/auth";
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/chats - Create new chat
+// POST /api/chats - Create new chat (UPDATED - Skip welcome for initial messages)
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get("auth-token")?.value;
@@ -64,6 +64,20 @@ export async function POST(request: NextRequest) {
     if (!payload) {
       return errorResponse("Invalid or expired token", 401);
     }
+
+    // UPDATED: Parse request body to check for initial message
+    let body = {};
+    try {
+      const requestBody = await request.text();
+      if (requestBody) {
+        body = JSON.parse(requestBody);
+      }
+    } catch (parseError) {
+      // If parsing fails, continue with empty body (backward compatibility)
+      console.log("No body or invalid JSON, continuing with empty body");
+    }
+
+    const { initialMessage } = body as { initialMessage?: string };
 
     const client = await pool.connect();
 
@@ -78,28 +92,36 @@ export async function POST(request: NextRequest) {
 
       const newChat = chatResult.rows[0];
 
-      // Create an AI-generated welcome message
-      let welcomeMessage: string;
-      try {
-        welcomeMessage = getWelcomeMessage();
-        console.log("Generated AI welcome message for new chat");
-      } catch (error) {
-        console.error(
-          "Failed to generate AI welcome message, using fallback:",
-          error
+      // UPDATED: Only add welcome message if no initial message is provided
+      if (!initialMessage || !initialMessage.trim()) {
+        // Create an AI-generated welcome message (original behavior)
+        let welcomeMessage: string;
+        try {
+          welcomeMessage = getWelcomeMessage();
+          console.log("Generated AI welcome message for new chat");
+        } catch (error) {
+          console.error(
+            "Failed to generate AI welcome message, using fallback:",
+            error
+          );
+          welcomeMessage =
+            "Hello! I'm your Victoria University Assistant. I'm here to help you with questions about courses, enrollment, campus facilities, academic policies, and more. How can I assist you today?";
+        }
+
+        // Save the welcome message
+        await client.query(
+          `INSERT INTO messages (id, "chatId", content, role, "createdAt", "updatedAt")
+           VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())`,
+          [newChat.id, welcomeMessage, "ASSISTANT"]
         );
-        welcomeMessage =
-          "Hello! I'm your Victoria University Assistant. I'm here to help you with questions about courses, enrollment, campus facilities, academic policies, and more. How can I assist you today?";
+
+        console.log("New chat created with AI welcome message:", newChat.id);
+      } else {
+        console.log(
+          "New chat created without welcome message (has initial message):",
+          newChat.id
+        );
       }
-
-      // Save the welcome message
-      await client.query(
-        `INSERT INTO messages (id, "chatId", content, role, "createdAt", "updatedAt")
-         VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())`,
-        [newChat.id, welcomeMessage, "ASSISTANT"]
-      );
-
-      console.log("New chat created with AI welcome message:", newChat.id);
 
       return successResponse("Chat created successfully", {
         chat: newChat,

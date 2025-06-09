@@ -1,4 +1,4 @@
-// src/components/layout/dashboard-layout.tsx (FIXED - Profile icon circle color and letter)
+// src/components/layout/dashboard-layout.tsx (FIXED - Immediate profile updates)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -51,7 +51,7 @@ export function DashboardLayout({
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { user, isLoading: userLoading } = useUser();
+  const { user, isLoading: userLoading, refreshUser } = useUser();
   const { getThemeClasses, isDark } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
@@ -61,6 +61,28 @@ export function DashboardLayout({
   const [returnUrl, setReturnUrl] = useState("/dashboard");
 
   const themeClasses = getThemeClasses();
+
+  // FIXED: Listen for profile update events to refresh user data immediately
+  useEffect(() => {
+    const handleProfileUpdate = async (event: CustomEvent) => {
+      console.log("Profile update event received:", event.detail);
+      // Refresh user data when profile is updated
+      await refreshUser();
+    };
+
+    // Listen for the custom profile update event
+    window.addEventListener(
+      "userProfileUpdated",
+      handleProfileUpdate as unknown as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "userProfileUpdated",
+        handleProfileUpdate as unknown as EventListener
+      );
+    };
+  }, [refreshUser]);
 
   const openProfile = () => {
     const currentUrl = pathname + window.location.search;
@@ -186,11 +208,18 @@ export function DashboardLayout({
     }
   };
 
-  // FIXED: Get the first letter of display name (or full name as fallback)
+  // FIXED: Get the first letter of display name (or full name as fallback) - with real-time updates
   const getProfileInitial = () => {
     if (!user) return "?";
+    // Use the most current user data
     const name = user.displayName || user.fullName || user.email;
     return name.charAt(0).toUpperCase();
+  };
+
+  // FIXED: Get current display name with real-time updates
+  const getCurrentDisplayName = () => {
+    if (!user) return "User";
+    return user.displayName || user.fullName || "User";
   };
 
   if (userLoading) {
@@ -245,13 +274,12 @@ export function DashboardLayout({
       <div
         className={`flex overflow-hidden ${themeClasses.background} shadow-lg w-full max-w-7xl h-full rounded-lg ${themeClasses.border} border`}
       >
-        {/* Sidebar - IMPROVED visibility in dark mode */}
+        {/* Sidebar */}
         <aside
           className={`fixed inset-y-0 left-0 z-50 w-80 shadow-lg transform transition-transform duration-300 ease-in-out
                ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
                lg:translate-x-0 lg:static lg:inset-0`}
           style={{
-            // Solid background in dark mode for better visibility
             backgroundColor: isDark ? "rgb(17, 24, 39)" : "white",
             borderRight: isDark
               ? "1px solid rgb(55, 65, 81)"
@@ -259,7 +287,7 @@ export function DashboardLayout({
           }}
         >
           <div className="flex flex-col h-full">
-            {/* VU Logo and Title - Enhanced visibility */}
+            {/* VU Logo and Title */}
             <div
               className={`flex items-center justify-between px-6 py-4 border-b`}
               style={{
@@ -316,7 +344,7 @@ export function DashboardLayout({
             <div className="flex-1 px-6 py-4 overflow-y-auto">
               {/* Action Buttons */}
               <div className="space-y-3 mb-6">
-                {/* New Chat Button - Enhanced for dark mode */}
+                {/* New Chat Button */}
                 <button
                   onClick={handleNewChat}
                   disabled={isLoading}
@@ -338,7 +366,7 @@ export function DashboardLayout({
                   <span>{isLoading ? "Creating..." : "New Chat"}</span>
                 </button>
 
-                {/* Global Search Button - Enhanced styling */}
+                {/* Global Search Button */}
                 <button
                   onClick={() => setShowGlobalSearch(!showGlobalSearch)}
                   className={`w-full border px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium ${
@@ -374,7 +402,7 @@ export function DashboardLayout({
                 </div>
               )}
 
-              {/* Chat Sessions List - Enhanced visibility */}
+              {/* Chat Sessions List */}
               <div className="space-y-2">
                 <h3
                   className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-500"} uppercase tracking-wider mb-3`}
@@ -447,7 +475,7 @@ export function DashboardLayout({
                           </p>
                         </div>
 
-                        {/* Chat Actions - Enhanced visibility */}
+                        {/* Chat Actions */}
                         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {/* Rename Button */}
                           {renameChat && (
@@ -503,7 +531,7 @@ export function DashboardLayout({
               </div>
             </div>
 
-            {/* User Profile Section at Bottom - FIXED: Theme color circle and display name letter */}
+            {/* User Profile Section at Bottom - FIXED: Real-time updates */}
             <div
               className={`border-t p-4`}
               style={{
@@ -511,7 +539,7 @@ export function DashboardLayout({
               }}
             >
               <div className="flex items-center space-x-3 mb-3">
-                {/* FIXED: Profile icon with theme color background and display name initial */}
+                {/* FIXED: Profile icon with theme color background and real-time display name initial */}
                 <div
                   className={`w-10 h-10 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md`}
                 >
@@ -520,10 +548,11 @@ export function DashboardLayout({
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
+                  {/* FIXED: Real-time display name updates */}
                   <p
                     className={`text-sm font-medium ${isDark ? "text-gray-100" : "text-gray-900"} truncate`}
                   >
-                    {user.displayName || user.fullName}
+                    {getCurrentDisplayName()}
                   </p>
                   <p
                     className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} truncate`}
@@ -533,7 +562,7 @@ export function DashboardLayout({
                 </div>
               </div>
 
-              {/* Profile Actions - Enhanced for dark mode */}
+              {/* Profile Actions */}
               <div className="space-y-1">
                 <button
                   onClick={openProfile}
@@ -587,7 +616,7 @@ export function DashboardLayout({
 
         {/* Main Content */}
         <div className="flex flex-col flex-1 overflow-auto">
-          {/* Consolidated Header - FIXED: Single search button on mobile */}
+          {/* Consolidated Header */}
           <header
             className={`${themeClasses.background} shadow-sm ${themeClasses.borderLight} border-b sticky top-0 z-10`}
           >
@@ -637,7 +666,7 @@ export function DashboardLayout({
                   </div>
                 </div>
 
-                {/* Right Section - Chat Actions + Theme - FIXED: Single search on mobile */}
+                {/* Right Section - Chat Actions + Theme */}
                 <div className="flex items-center space-x-2">
                   {/* Chat-specific search - Desktop only OR when active chat exists */}
                   {activeChat && (
