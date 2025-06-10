@@ -1,4 +1,4 @@
-// src/components/chat/chat-interface.tsx (UPDATED - AI responses in bubbles)
+// src/components/chat/chat-interface.tsx (UPDATED - Typewriter effect for AI responses)
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -18,6 +18,41 @@ interface ChatInterfaceProps {
   filteredMessages?: Message[];
 }
 
+// Typewriter Hook
+function useTypewriter(text: string, speed: number = 30) {
+  const [displayText, setDisplayText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    if (!text) {
+      setDisplayText("");
+      setIsTyping(false);
+      return;
+    }
+
+    setIsTyping(true);
+    setDisplayText("");
+
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index < text.length) {
+        setDisplayText(text.slice(0, index + 1));
+        index++;
+      } else {
+        clearInterval(timer);
+        setIsTyping(false);
+      }
+    }, speed);
+
+    return () => {
+      clearInterval(timer);
+      setIsTyping(false);
+    };
+  }, [text, speed]);
+
+  return { displayText, isTyping };
+}
+
 export function ChatInterface({
   chat,
   onSendMessage,
@@ -35,6 +70,9 @@ export function ChatInterface({
   const [showDeleteModal, setShowDeleteModal] = useState<Message | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // NEW: State for tracking which AI message is currently typing
+  const [typingMessageId, setTypingMessageId] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
@@ -45,7 +83,23 @@ export function ChatInterface({
   // Use filtered messages if provided, otherwise use all messages
   const displayMessages = filteredMessages || chat.messages;
 
-  // Auto-scroll to bottom when new messages arrive, but not on initial load
+  // NEW: Track when new AI messages are added to trigger typewriter effect
+  useEffect(() => {
+    if (displayMessages.length > 0) {
+      const lastMessage = displayMessages[displayMessages.length - 1];
+
+      // If the last message is from assistant and doesn't have a temp ID, start typing effect
+      if (
+        lastMessage.role === "ASSISTANT" &&
+        !lastMessage.id.startsWith("temp-") &&
+        lastMessage.id !== typingMessageId
+      ) {
+        setTypingMessageId(lastMessage.id);
+      }
+    }
+  }, [displayMessages, typingMessageId]);
+
+  // Auto-scroll to bottom when new messages arrive or during typing
   useEffect(() => {
     if (messagesContainerRef.current) {
       const container = messagesContainerRef.current;
@@ -53,7 +107,7 @@ export function ChatInterface({
         container.scrollHeight - container.scrollTop - container.clientHeight <
         100;
 
-      if (isNearBottom || isSending) {
+      if (isNearBottom || isSending || typingMessageId) {
         setTimeout(() => {
           if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({
@@ -64,7 +118,7 @@ export function ChatInterface({
         }, 100);
       }
     }
-  }, [chat.messages.length, isSending]);
+  }, [chat.messages.length, isSending, typingMessageId]);
 
   // Initial scroll to bottom when component mounts or chat changes
   useEffect(() => {
@@ -184,6 +238,39 @@ export function ChatInterface({
     return lastMessage.role === "USER" && lastMessage.id.startsWith("temp-");
   };
 
+  // NEW: TypewriterMessage component for AI responses
+  const TypewriterMessage = ({ message: msg }: { message: Message }) => {
+    const shouldType = msg.id === typingMessageId;
+    const { displayText, isTyping } = useTypewriter(
+      shouldType ? msg.content : msg.content,
+      shouldType ? 25 : 0
+    );
+
+    // When typing is complete, clear the typing message ID
+    useEffect(() => {
+      if (shouldType && !isTyping && displayText === msg.content) {
+        setTypingMessageId(null);
+      }
+    }, [shouldType, isTyping, displayText, msg.content]);
+
+    return (
+      <div className="whitespace-pre-wrap break-words leading-relaxed text-lg">
+        {shouldType ? (
+          <>
+            {highlightSearchText(displayText, searchQuery)}
+            {isTyping && (
+              <span
+                className={`inline-block w-2 h-5 ${themeClasses.primaryText.replace("text-", "bg-")} ml-1 animate-pulse`}
+              />
+            )}
+          </>
+        ) : (
+          highlightSearchText(msg.content, searchQuery)
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={`flex flex-col h-full ${themeClasses.background}`}>
       {/* Messages Area */}
@@ -209,18 +296,18 @@ export function ChatInterface({
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                  <p className={themeClasses.textMuted}>
+                  <p className={`${themeClasses.textMuted} text-lg`}>
                     No messages found matching "{searchQuery}"
                   </p>
                   <button
                     onClick={() => onSearchInChat && onSearchInChat("")}
-                    className={`${themeClasses.primaryText} hover:underline text-sm mt-2`}
+                    className={`${themeClasses.primaryText} hover:underline text-base mt-2`}
                   >
                     Clear search
                   </button>
                 </div>
               ) : (
-                <p className={themeClasses.textMuted}>
+                <p className={`${themeClasses.textMuted} text-lg`}>
                   No messages yet. Start the conversation!
                 </p>
               )}
@@ -236,7 +323,7 @@ export function ChatInterface({
                   id={`message-${msg.id}`}
                   className={`flex ${msg.role === "USER" ? "justify-end" : "justify-start"} group`}
                 >
-                  {/* UPDATED: Both USER and ASSISTANT messages now use bubbles */}
+                  {/* Both USER and ASSISTANT messages now use bubbles */}
                   <div className="max-w-3xl w-full flex items-start space-x-3">
                     {/* Assistant Avatar */}
                     {msg.role === "ASSISTANT" && (
@@ -264,7 +351,7 @@ export function ChatInterface({
                     >
                       {/* Message Bubble */}
                       <div
-                        className={`relative rounded-2xl px-4 py-3 shadow-sm max-w-2xl ${
+                        className={`relative rounded-2xl px-5 py-4 shadow-sm max-w-2xl ${
                           msg.role === "USER"
                             ? `${themeClasses.primary} text-white ml-auto`
                             : `${themeClasses.backgroundSecondary} ${themeClasses.text} border ${themeClasses.borderLight}`
@@ -322,7 +409,7 @@ export function ChatInterface({
                             </div>
                           )}
 
-                        {/* Message Content */}
+                        {/* Message Content - UPDATED: Use TypewriterMessage for AI responses */}
                         {editingMessage?.id === msg.id ? (
                           <div className="space-y-3">
                             <textarea
@@ -330,7 +417,7 @@ export function ChatInterface({
                               onChange={(e) =>
                                 setEditingContent(e.target.value)
                               }
-                              className={`w-full p-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none`}
+                              className={`w-full p-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none text-lg`}
                               rows={3}
                               autoFocus
                             />
@@ -340,21 +427,24 @@ export function ChatInterface({
                                 disabled={
                                   isProcessing || !editingContent.trim()
                                 }
-                                className={`px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${themeClasses.primaryFocus}`}
+                                className={`px-3 py-1 bg-green-600 text-white text-base rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${themeClasses.primaryFocus}`}
                               >
                                 {isProcessing ? "Saving..." : "Save"}
                               </button>
                               <button
                                 onClick={cancelEditing}
                                 disabled={isProcessing}
-                                className={`px-3 py-1 ${themeClasses.backgroundTertiary} ${themeClasses.text} text-sm rounded ${themeClasses.hover} transition-colors disabled:opacity-50`}
+                                className={`px-3 py-1 ${themeClasses.backgroundTertiary} ${themeClasses.text} text-base rounded ${themeClasses.hover} transition-colors disabled:opacity-50`}
                               >
                                 Cancel
                               </button>
                             </div>
                           </div>
+                        ) : // NEW: Use TypewriterMessage for AI responses, regular display for user messages
+                        msg.role === "ASSISTANT" ? (
+                          <TypewriterMessage message={msg} />
                         ) : (
-                          <div className="whitespace-pre-wrap break-words leading-relaxed text-base">
+                          <div className="whitespace-pre-wrap break-words leading-relaxed text-lg">
                             {highlightSearchText(msg.content, searchQuery)}
                           </div>
                         )}
@@ -363,7 +453,7 @@ export function ChatInterface({
                         {editingMessage?.id !== msg.id &&
                           !msg.id.startsWith("temp-") && (
                             <div
-                              className={`text-xs mt-2 ${
+                              className={`text-sm mt-3 ${
                                 msg.role === "USER"
                                   ? "text-white/70"
                                   : themeClasses.textMuted
@@ -380,7 +470,7 @@ export function ChatInterface({
                       <div
                         className={`w-8 h-8 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md flex-shrink-0 mt-1`}
                       >
-                        <span className="text-white font-semibold text-sm">
+                        <span className="text-white font-semibold text-base">
                           {user?.displayName?.charAt(0).toUpperCase() ||
                             user?.fullName?.charAt(0).toUpperCase() ||
                             "U"}
@@ -416,9 +506,9 @@ export function ChatInterface({
                   </div>
 
                   <div
-                    className={`${themeClasses.backgroundSecondary} border ${themeClasses.borderLight} rounded-2xl px-4 py-3 shadow-sm`}
+                    className={`${themeClasses.backgroundSecondary} border ${themeClasses.borderLight} rounded-2xl px-5 py-4 shadow-sm`}
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       <div className="flex space-x-1">
                         <div
                           className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
@@ -432,7 +522,7 @@ export function ChatInterface({
                           style={{ animationDelay: "0.2s" }}
                         ></div>
                       </div>
-                      <span className={`text-sm ${themeClasses.textMuted}`}>
+                      <span className={`text-base ${themeClasses.textMuted}`}>
                         VU Assistant is thinking...
                       </span>
                     </div>
@@ -464,9 +554,9 @@ export function ChatInterface({
                   </div>
 
                   <div
-                    className={`${themeClasses.backgroundSecondary} border ${themeClasses.borderLight} rounded-2xl px-4 py-3 shadow-sm`}
+                    className={`${themeClasses.backgroundSecondary} border ${themeClasses.borderLight} rounded-2xl px-5 py-4 shadow-sm`}
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       <div className="flex space-x-1">
                         <div
                           className={`w-2 h-2 ${themeClasses.primaryText.replace("text-", "bg-")} rounded-full animate-bounce`}
@@ -480,7 +570,7 @@ export function ChatInterface({
                           style={{ animationDelay: "0.2s" }}
                         ></div>
                       </div>
-                      <span className={`text-sm ${themeClasses.textMuted}`}>
+                      <span className={`text-base ${themeClasses.textMuted}`}>
                         VU Assistant is typing...
                       </span>
                     </div>
@@ -511,9 +601,9 @@ export function ChatInterface({
                 }
               }}
               placeholder="Ask about courses, enrollment, campus facilities, or anything VU-related..."
-              className={`w-full px-4 py-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none transition-colors placeholder:${themeClasses.textMuted} shadow-sm text-base`}
+              className={`w-full px-4 py-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none transition-colors placeholder:${themeClasses.textMuted} shadow-sm text-lg leading-relaxed`}
               rows={1}
-              style={{ minHeight: "44px", maxHeight: "120px" }}
+              style={{ minHeight: "52px", maxHeight: "140px" }}
               disabled={isSending}
               maxLength={500}
             />
@@ -544,7 +634,7 @@ export function ChatInterface({
         </form>
 
         <div
-          className={`flex items-center justify-between mt-2 text-xs ${themeClasses.textMuted}`}
+          className={`flex items-center justify-between mt-2 text-sm ${themeClasses.textMuted}`}
         >
           <span>Press Enter to send, Shift+Enter for new line</span>
           <span

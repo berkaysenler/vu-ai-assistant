@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx (FIXED - Quick actions now send messages)
+// src/app/dashboard/page.tsx (UPDATED - Bigger fonts throughout)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -140,28 +140,28 @@ export default function DashboardPage() {
         />
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-4xl mx-auto px-4">
-          {/* Welcome Section */}
+          {/* Welcome Section - UPDATED: Bigger fonts */}
           <div className="mb-8">
             <div
-              className={`w-24 h-24 ${themeClasses.primary} rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg`}
+              className={`w-28 h-28 ${themeClasses.primary} rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg`}
             >
               <div
-                className={`w-12 h-12 ${themeClasses.background} rounded-lg flex items-center justify-center`}
+                className={`w-14 h-14 ${themeClasses.background} rounded-lg flex items-center justify-center`}
               >
                 <Image
                   src="/vu-icon.ico"
                   alt="VU Assistant Logo"
-                  width={32}
-                  height={32}
+                  width={40}
+                  height={40}
                   className="w-full h-full object-contain"
                 />
               </div>
             </div>
-            <h2 className={`text-3xl font-bold ${themeClasses.text} mb-3`}>
+            <h2 className={`text-4xl font-bold ${themeClasses.text} mb-4`}>
               Welcome to Victoria University Assistant
             </h2>
             <p
-              className={`${themeClasses.textSecondary} max-w-2xl mx-auto text-lg leading-relaxed`}
+              className={`${themeClasses.textSecondary} max-w-2xl mx-auto text-xl leading-relaxed`}
             >
               Your AI-powered guide for all questions related to Victoria
               University. Ask about courses, enrollment, campus facilities,
@@ -169,29 +169,29 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Quick Start Chat */}
+          {/* Quick Start Chat - UPDATED: Bigger fonts */}
           <div className="w-full max-w-2xl mb-8">
-            <div className={`${themeClasses.card} rounded-xl shadow-lg p-6`}>
+            <div className={`${themeClasses.card} rounded-xl shadow-lg p-8`}>
               <h3
-                className={`text-lg font-semibold ${themeClasses.text} mb-4 text-center`}
+                className={`text-xl font-semibold ${themeClasses.text} mb-6 text-center`}
               >
                 Start a conversation
               </h3>
-              <form onSubmit={handleQuickStart} className="space-y-4">
+              <form onSubmit={handleQuickStart} className="space-y-6">
                 <div className="relative">
                   <textarea
                     value={quickMessage}
                     onChange={(e) => setQuickMessage(e.target.value)}
                     placeholder="Ask me anything about Victoria University..."
-                    className={`w-full px-4 py-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none text-base placeholder:${themeClasses.textMuted}`}
+                    className={`w-full px-5 py-4 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} resize-none text-lg placeholder:${themeClasses.textMuted} leading-relaxed`}
                     rows={3}
                     disabled={isQuickSending || isQuickActionProcessing}
                     maxLength={500}
                   />
                   <div
-                    className={`absolute bottom-2 right-2 text-xs ${themeClasses.textMuted}`}
+                    className={`absolute bottom-3 right-3 text-sm ${themeClasses.textMuted}`}
                   >
-                    {quickMessage.length}/500
+                    {/* {quickMessage.length}/500 */}
                   </div>
                 </div>
                 <button
@@ -201,17 +201,17 @@ export default function DashboardPage() {
                     isQuickSending ||
                     isQuickActionProcessing
                   }
-                  className={`w-full ${themeClasses.primary} text-white px-6 py-3 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed text-base font-medium`}
+                  className={`w-full ${themeClasses.primary} text-white px-8 py-4 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-semibold`}
                 >
                   {isQuickSending ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
                       <span>Starting chat...</span>
                     </>
                   ) : (
                     <>
                       <svg
-                        className="w-5 h-5"
+                        className="w-6 h-6"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -231,8 +231,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Quick Actions - FIXED: Now properly send messages */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-4xl mb-8">
+          {/* Quick Actions - UPDATED: Bigger fonts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl mb-8">
             {[
               {
                 title: "Course Information",
@@ -261,19 +261,19 @@ export default function DashboardPage() {
             ].map((action, index) => (
               <button
                 key={index}
-                onClick={() => handleQuickAction(action.message)} // FIXED: Now calls handleQuickAction
-                disabled={isQuickActionProcessing || isQuickSending} // FIXED: Disable during processing
-                className={`${themeClasses.card} p-6 rounded-lg ${themeClasses.cardHover} transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed`}
+                onClick={() => handleQuickAction(action.message)}
+                disabled={isQuickActionProcessing || isQuickSending}
+                className={`${themeClasses.card} p-8 rounded-lg ${themeClasses.cardHover} transition-all text-left group disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <div
-                  className={`w-12 h-12 ${themeClasses.primary} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${isQuickActionProcessing ? "animate-pulse" : ""}`}
+                  className={`w-16 h-16 ${themeClasses.primary} rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${isQuickActionProcessing ? "animate-pulse" : ""}`}
                 >
                   {/* FIXED: Show loading spinner when processing this specific action */}
                   {isQuickActionProcessing ? (
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                   ) : (
                     <svg
-                      className="w-6 h-6 text-white"
+                      className="w-8 h-8 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -287,16 +287,20 @@ export default function DashboardPage() {
                     </svg>
                   )}
                 </div>
-                <h4 className={`font-semibold ${themeClasses.text} mb-2`}>
+                <h4
+                  className={`font-semibold ${themeClasses.text} mb-3 text-lg`}
+                >
                   {action.title}
                 </h4>
-                <p className={`text-sm ${themeClasses.textSecondary}`}>
+                <p
+                  className={`text-base ${themeClasses.textSecondary} leading-relaxed`}
+                >
                   {action.description}
                 </p>
                 {/* FIXED: Show processing state with more specific message */}
                 {isQuickActionProcessing && (
                   <p
-                    className={`text-xs ${themeClasses.primaryText} mt-2 font-medium`}
+                    className={`text-sm ${themeClasses.primaryText} mt-3 font-medium`}
                   >
                     Opening chat...
                   </p>
@@ -305,14 +309,14 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Stats Section */}
+          {/* Stats Section - UPDATED: Bigger fonts */}
           {chats.length > 0 && (
             <div className={`text-center ${themeClasses.textMuted}`}>
-              <p className="text-sm">
+              <p className="text-base">
                 You have {chats.length} chat{chats.length !== 1 ? "s" : ""} in
                 your history
               </p>
-              <p className="text-xs mt-1">
+              <p className="text-sm mt-2">
                 Use the global search to find messages across all your chats
               </p>
             </div>

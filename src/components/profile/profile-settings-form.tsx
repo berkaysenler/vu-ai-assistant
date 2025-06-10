@@ -1,4 +1,4 @@
-// src/components/profile/profile-settings-form.tsx (FIXED - Centered sections in modal)
+// src/components/profile/profile-settings-form.tsx (UPDATED - Bigger fonts throughout)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -260,9 +260,9 @@ export function ProfileSettingsForm() {
 
   if (userLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-16">
         <div
-          className={`animate-spin rounded-full h-10 w-10 border-b-2 ${themeClasses.primary.replace("bg-", "border-")}`}
+          className={`animate-spin rounded-full h-12 w-12 border-b-2 ${themeClasses.primary.replace("bg-", "border-")}`}
         ></div>
       </div>
     );
@@ -270,8 +270,8 @@ export function ProfileSettingsForm() {
 
   if (!user) {
     return (
-      <div className="text-center py-12">
-        <p className={`${themeClasses.error} text-lg`}>
+      <div className="text-center py-16">
+        <p className={`${themeClasses.error} text-xl`}>
           Unable to load user data
         </p>
       </div>
@@ -285,12 +285,12 @@ export function ProfileSettingsForm() {
     // FIXED: Centered container with proper max width
     <div className="flex justify-center">
       <div className="w-full max-w-2xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-10">
           {/* Success Message */}
           {successMessage && (
             <div className="text-center">
               <div
-                className={`inline-block p-4 text-sm ${themeClasses.successLight} border rounded-lg`}
+                className={`inline-block p-5 text-base ${themeClasses.successLight} border rounded-lg`}
               >
                 ✅ {successMessage}
               </div>
@@ -301,7 +301,7 @@ export function ProfileSettingsForm() {
           {errors.general && (
             <div className="text-center">
               <div
-                className={`inline-block p-4 text-sm ${themeClasses.errorLight} border border-red-200 dark:border-red-800/30 rounded-lg`}
+                className={`inline-block p-5 text-base ${themeClasses.errorLight} border border-red-200 dark:border-red-800/30 rounded-lg`}
               >
                 ❌ {errors.general}
               </div>
@@ -310,17 +310,17 @@ export function ProfileSettingsForm() {
 
           {/* Personal Information Section - CENTERED */}
           <div
-            className={`${themeClasses.card} p-8 rounded-xl border text-center`}
+            className={`${themeClasses.card} p-10 rounded-xl border text-center`}
           >
-            <h3 className={`text-xl font-semibold ${themeClasses.text} mb-6`}>
+            <h3 className={`text-2xl font-semibold ${themeClasses.text} mb-8`}>
               Personal Information
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="text-left">
                 <label
                   htmlFor="displayName"
-                  className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                  className={`block text-base font-semibold ${themeClasses.text} mb-3`}
                 >
                   Display Name
                 </label>
@@ -334,7 +334,7 @@ export function ProfileSettingsForm() {
                   placeholder="Enter your display name"
                 />
                 <p
-                  className={`mt-1 text-xs ${themeClasses.textMuted} text-center`}
+                  className={`mt-2 text-sm ${themeClasses.textMuted} text-center`}
                 >
                   Currently: {user.displayName || user.fullName}
                 </p>
@@ -343,7 +343,7 @@ export function ProfileSettingsForm() {
               <div className="text-left">
                 <label
                   htmlFor="email"
-                  className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                  className={`block text-base font-semibold ${themeClasses.text} mb-3`}
                 >
                   Email Address
                 </label>
@@ -358,7 +358,7 @@ export function ProfileSettingsForm() {
                 />
                 {isEmailChanged && (
                   <p
-                    className={`mt-1 text-xs ${themeClasses.warning} text-center`}
+                    className={`mt-2 text-sm ${themeClasses.warning} text-center`}
                   >
                     Changing your email will require verification
                   </p>
@@ -368,10 +368,10 @@ export function ProfileSettingsForm() {
 
             {/* Email Change Password Field */}
             {isEmailChanged && (
-              <div className="mt-6">
+              <div className="mt-8">
                 <label
                   htmlFor="emailChangePassword"
-                  className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                  className={`block text-base font-semibold ${themeClasses.text} mb-3`}
                 >
                   Confirm Password for Email Change
                 </label>
@@ -387,7 +387,7 @@ export function ProfileSettingsForm() {
                   />
                 </div>
                 <p
-                  className={`mt-2 text-xs ${themeClasses.textMuted} text-center`}
+                  className={`mt-3 text-sm ${themeClasses.textMuted} text-center`}
                 >
                   For security, we need your password to change your email
                   address
@@ -398,27 +398,27 @@ export function ProfileSettingsForm() {
 
           {/* Theme & Appearance Section - CENTERED */}
           <div
-            className={`${themeClasses.card} p-8 rounded-xl border text-center`}
+            className={`${themeClasses.card} p-10 rounded-xl border text-center`}
           >
-            <h3 className={`text-xl font-semibold ${themeClasses.text} mb-6`}>
+            <h3 className={`text-2xl font-semibold ${themeClasses.text} mb-8`}>
               Theme & Appearance
             </h3>
 
             {/* Current Theme Info */}
             <div
-              className={`${themeClasses.backgroundSecondary} p-4 rounded-lg mb-6 max-w-md mx-auto`}
+              className={`${themeClasses.backgroundSecondary} p-5 rounded-lg mb-8 max-w-md mx-auto`}
             >
-              <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center justify-center space-x-4">
                 <div
-                  className={`w-5 h-5 ${isDark ? themeOptions.find((t) => t.value === colorTheme)?.darkColor : themeOptions.find((t) => t.value === colorTheme)?.color} rounded-full`}
+                  className={`w-6 h-6 ${isDark ? themeOptions.find((t) => t.value === colorTheme)?.darkColor : themeOptions.find((t) => t.value === colorTheme)?.color} rounded-full`}
                 ></div>
                 <div>
-                  <p className={`text-sm font-medium ${themeClasses.text}`}>
+                  <p className={`text-base font-semibold ${themeClasses.text}`}>
                     Current:{" "}
                     {themeOptions.find((t) => t.value === colorTheme)?.name} •{" "}
                     {isDark ? "Dark" : "Light"}
                   </p>
-                  <p className={`text-xs ${themeClasses.textMuted}`}>
+                  <p className={`text-sm ${themeClasses.textMuted}`}>
                     Theme changes apply immediately
                   </p>
                 </div>
@@ -426,17 +426,17 @@ export function ProfileSettingsForm() {
             </div>
 
             {/* Color Theme Selection - CENTERED */}
-            <div className="mb-8">
+            <div className="mb-10">
               <label
-                className={`block text-sm font-medium ${themeClasses.text} mb-4`}
+                className={`block text-base font-semibold ${themeClasses.text} mb-6`}
               >
                 Color Theme
               </label>
-              <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
+              <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto">
                 {themeOptions.map((theme) => (
                   <label
                     key={theme.value}
-                    className={`relative cursor-pointer rounded-lg p-4 flex flex-col items-center space-y-2 border-2 transition-colors ${
+                    className={`relative cursor-pointer rounded-lg p-5 flex flex-col items-center space-y-3 border-2 transition-colors ${
                       formData.theme === theme.value
                         ? `${themeClasses.primaryBorder} ${themeClasses.primaryLight}`
                         : `${themeClasses.border} ${themeClasses.hover}`
@@ -451,17 +451,17 @@ export function ProfileSettingsForm() {
                       className="sr-only"
                     />
                     <div
-                      className={`w-8 h-8 rounded-full ${isDark ? theme.darkColor : theme.color} shadow-md`}
+                      className={`w-10 h-10 rounded-full ${isDark ? theme.darkColor : theme.color} shadow-md`}
                     ></div>
                     <span
-                      className={`text-sm font-medium ${themeClasses.text}`}
+                      className={`text-base font-semibold ${themeClasses.text}`}
                     >
                       {theme.name}
                     </span>
                     {formData.theme === theme.value && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-md">
                         <svg
-                          className="w-3 h-3 text-white"
+                          className="w-4 h-4 text-white"
                           fill="currentColor"
                           viewBox="0 0 8 8"
                         >
@@ -477,11 +477,11 @@ export function ProfileSettingsForm() {
             {/* Dark Mode Selection - CENTERED */}
             <div>
               <label
-                className={`block text-sm font-medium ${themeClasses.text} mb-4`}
+                className={`block text-base font-semibold ${themeClasses.text} mb-6`}
               >
                 Brightness Mode
               </label>
-              <div className="space-y-2 max-w-sm mx-auto">
+              <div className="space-y-3 max-w-sm mx-auto">
                 {[
                   {
                     value: "light",
@@ -501,9 +501,9 @@ export function ProfileSettingsForm() {
                 ].map((mode) => (
                   <label
                     key={mode.value}
-                    className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${
                       darkMode === mode.value
-                        ? `${themeClasses.primaryLight} ${themeClasses.primaryText} font-medium`
+                        ? `${themeClasses.primaryLight} ${themeClasses.primaryText} font-semibold`
                         : `${themeClasses.hover}`
                     }`}
                   >
@@ -516,7 +516,7 @@ export function ProfileSettingsForm() {
                       className="sr-only"
                     />
                     <svg
-                      className="w-5 h-5"
+                      className="w-6 h-6"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -528,11 +528,11 @@ export function ProfileSettingsForm() {
                         d={mode.icon}
                       />
                     </svg>
-                    <span className={`text-sm ${themeClasses.text}`}>
+                    <span className={`text-base ${themeClasses.text}`}>
                       {mode.name}
                     </span>
                     {darkMode === mode.value && (
-                      <div className="ml-auto w-3 h-3 bg-green-500 rounded-full"></div>
+                      <div className="ml-auto w-4 h-4 bg-green-500 rounded-full"></div>
                     )}
                   </label>
                 ))}
@@ -542,21 +542,21 @@ export function ProfileSettingsForm() {
 
           {/* Password Change Section - CENTERED */}
           <div
-            className={`${themeClasses.card} p-8 rounded-xl border text-center`}
+            className={`${themeClasses.card} p-10 rounded-xl border text-center`}
           >
-            <h3 className={`text-xl font-semibold ${themeClasses.text} mb-6`}>
+            <h3 className={`text-2xl font-semibold ${themeClasses.text} mb-8`}>
               Change Password
             </h3>
-            <p className={`text-sm ${themeClasses.textMuted} mb-6`}>
+            <p className={`text-base ${themeClasses.textMuted} mb-8`}>
               Leave password fields empty if you don't want to change your
               password
             </p>
 
-            <div className="space-y-6 max-w-lg mx-auto">
+            <div className="space-y-8 max-w-lg mx-auto">
               <div className="text-left">
                 <label
                   htmlFor="currentPassword"
-                  className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                  className={`block text-base font-semibold ${themeClasses.text} mb-3`}
                 >
                   Current Password
                 </label>
@@ -571,11 +571,11 @@ export function ProfileSettingsForm() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="text-left">
                   <label
                     htmlFor="newPassword"
-                    className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                    className={`block text-base font-semibold ${themeClasses.text} mb-3`}
                   >
                     New Password
                   </label>
@@ -593,7 +593,7 @@ export function ProfileSettingsForm() {
                 <div className="text-left">
                   <label
                     htmlFor="confirmPassword"
-                    className={`block text-sm font-medium ${themeClasses.text} mb-2`}
+                    className={`block text-base font-semibold ${themeClasses.text} mb-3`}
                   >
                     Confirm New Password
                   </label>
@@ -612,11 +612,11 @@ export function ProfileSettingsForm() {
           </div>
 
           {/* Submit Button - CENTERED */}
-          <div className="flex justify-center pt-4">
+          <div className="flex justify-center pt-6">
             <Button
               type="submit"
               loading={isLoading}
-              className="px-12 py-3 text-base font-semibold"
+              className="px-16 py-4 text-lg font-semibold"
             >
               Save Changes
             </Button>

@@ -1,4 +1,4 @@
-// src/components/layout/dashboard-layout.tsx (UPDATED - Use confirmation modal for chat deletion)
+// src/components/layout/dashboard-layout.tsx (UPDATED - Bigger fonts in sidebar)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -247,7 +247,7 @@ export function DashboardLayout({
           <div
             className={`animate-spin rounded-full h-12 w-12 border-b-2 ${themeClasses.primary.replace("bg-", "border-")} mx-auto mb-4`}
           ></div>
-          <p className={themeClasses.textSecondary}>Loading...</p>
+          <p className={`${themeClasses.textSecondary} text-lg`}>Loading...</p>
         </div>
       </div>
     );
@@ -259,10 +259,10 @@ export function DashboardLayout({
         className={`min-h-screen ${themeClasses.backgroundSecondary} flex items-center justify-center`}
       >
         <div className="text-center">
-          <p className="text-red-600 mb-4">Please log in to continue</p>
+          <p className="text-red-600 mb-4 text-lg">Please log in to continue</p>
           <Link
             href="/auth/login"
-            className={`inline-block ${themeClasses.primary} text-white px-4 py-2 rounded ${themeClasses.primaryHover} transition-colors`}
+            className={`inline-block ${themeClasses.primary} text-white px-6 py-3 rounded ${themeClasses.primaryHover} transition-colors text-base`}
           >
             Go to Login
           </Link>
@@ -291,7 +291,7 @@ export function DashboardLayout({
         <div
           className={`flex overflow-hidden ${themeClasses.background} shadow-lg w-full max-w-7xl h-full rounded-lg ${themeClasses.border} border`}
         >
-          {/* Sidebar */}
+          {/* Sidebar - UPDATED: Bigger fonts throughout */}
           <aside
             className={`fixed inset-y-0 left-0 z-50 w-80 shadow-lg transform transition-transform duration-300 ease-in-out
                  ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -304,35 +304,35 @@ export function DashboardLayout({
             }}
           >
             <div className="flex flex-col h-full">
-              {/* VU Logo and Title */}
+              {/* VU Logo and Title - UPDATED: Bigger fonts */}
               <div
-                className={`flex items-center justify-between px-6 py-4 border-b`}
+                className={`flex items-center justify-between px-6 py-5 border-b`}
                 style={{
                   borderColor: isDark
                     ? "rgb(55, 65, 81)"
                     : "rgb(229, 231, 235)",
                 }}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <div
-                    className={`w-8 h-8 ${themeClasses.primary} rounded-lg flex items-center justify-center shadow-md`}
+                    className={`w-10 h-10 ${themeClasses.primary} rounded-lg flex items-center justify-center shadow-md`}
                   >
                     <Image
                       src="/vu-logo.png"
                       alt="VU Assistant Logo"
-                      width={32}
-                      height={32}
-                      className="w-8 h-8 object-contain"
+                      width={36}
+                      height={36}
+                      className="w-9 h-9 object-contain"
                     />
                   </div>
                   <div>
                     <h1
-                      className={`text-lg font-semibold ${isDark ? "text-gray-100" : "text-gray-900"}`}
+                      className={`text-xl font-semibold ${isDark ? "text-gray-100" : "text-gray-900"}`}
                     >
                       VU Assistant
                     </h1>
                     <p
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                      className={`text-base ${isDark ? "text-gray-400" : "text-gray-500"}`}
                     >
                       AI-Powered
                     </p>
@@ -341,7 +341,7 @@ export function DashboardLayout({
                 {/* Close button for mobile */}
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className={`lg:hidden p-1 rounded-md ${isDark ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"} transition-colors`}
+                  className={`lg:hidden p-2 rounded-md ${isDark ? "text-gray-400 hover:text-gray-200 hover:bg-gray-700" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"} transition-colors`}
                 >
                   <svg
                     className="w-6 h-6"
@@ -360,17 +360,17 @@ export function DashboardLayout({
               </div>
 
               {/* Navigation Content */}
-              <div className="flex-1 px-6 py-4 overflow-y-auto">
-                {/* Action Buttons */}
-                <div className="space-y-3 mb-6">
+              <div className="flex-1 px-6 py-5 overflow-y-auto">
+                {/* Action Buttons - UPDATED: Bigger fonts */}
+                <div className="space-y-4 mb-8">
                   {/* New Chat Button */}
                   <button
                     onClick={handleNewChat}
                     disabled={isLoading}
-                    className={`w-full ${themeClasses.primary} text-white px-4 py-3 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm`}
+                    className={`w-full ${themeClasses.primary} text-white px-5 py-4 rounded-lg ${themeClasses.primaryHover} transition-colors flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm text-base`}
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-6 h-6"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -388,14 +388,14 @@ export function DashboardLayout({
                   {/* Global Search Button */}
                   <button
                     onClick={() => setShowGlobalSearch(!showGlobalSearch)}
-                    className={`w-full border px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium ${
+                    className={`w-full border px-5 py-4 rounded-lg transition-colors flex items-center justify-center space-x-3 font-semibold text-base ${
                       showGlobalSearch
                         ? `${themeClasses.primaryLight} ${themeClasses.primaryBorder} ${themeClasses.primaryText} border-2`
                         : `${isDark ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500" : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"}`
                     }`}
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-6 h-6"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -413,7 +413,7 @@ export function DashboardLayout({
 
                 {/* Global Search */}
                 {showGlobalSearch && (
-                  <div className="mb-6">
+                  <div className="mb-8">
                     <GlobalSearch
                       onSelectResult={handleSearchResult}
                       className="w-full"
@@ -421,28 +421,28 @@ export function DashboardLayout({
                   </div>
                 )}
 
-                {/* Chat Sessions List */}
-                <div className="space-y-2">
+                {/* Chat Sessions List - UPDATED: Bigger fonts */}
+                <div className="space-y-3">
                   <h3
-                    className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-500"} uppercase tracking-wider mb-3`}
+                    className={`text-base font-semibold ${isDark ? "text-gray-400" : "text-gray-500"} uppercase tracking-wider mb-4`}
                   >
                     Chat Sessions ({chats.length})
                   </h3>
 
                   {isLoading ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="animate-pulse">
                           <div
-                            className={`h-12 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-lg`}
+                            className={`h-16 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-lg`}
                           ></div>
                         </div>
                       ))}
                     </div>
                   ) : chats.length === 0 ? (
-                    <div className="text-center py-8">
+                    <div className="text-center py-10">
                       <svg
-                        className={`w-12 h-12 mx-auto mb-3 ${isDark ? "text-gray-600" : "text-gray-300"}`}
+                        className={`w-16 h-16 mx-auto mb-4 ${isDark ? "text-gray-600" : "text-gray-300"}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -455,22 +455,22 @@ export function DashboardLayout({
                         />
                       </svg>
                       <p
-                        className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                        className={`text-base ${isDark ? "text-gray-400" : "text-gray-500"} mb-2`}
                       >
                         No chats yet
                       </p>
                       <p
-                        className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                        className={`text-sm ${isDark ? "text-gray-500" : "text-gray-400"}`}
                       >
                         Click "New Chat" to start!
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {chats.map((chat) => (
                         <div
                           key={chat.id}
-                          className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                          className={`group flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors ${
                             activeChat?.id === chat.id
                               ? `${themeClasses.primaryLight} ${themeClasses.primaryBorder} border-2`
                               : `${isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"}`
@@ -479,7 +479,7 @@ export function DashboardLayout({
                         >
                           <div className="flex-1 min-w-0">
                             <p
-                              className={`text-sm font-medium truncate ${
+                              className={`text-base font-semibold truncate ${
                                 activeChat?.id === chat.id
                                   ? themeClasses.primaryText
                                   : `${isDark ? "text-gray-200" : "text-gray-900"}`
@@ -488,7 +488,7 @@ export function DashboardLayout({
                               {chat.name}
                             </p>
                             <p
-                              className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} mt-1`}
+                              className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"} mt-1`}
                             >
                               {formatChatTime(chat.updatedAt)}
                             </p>
@@ -503,11 +503,11 @@ export function DashboardLayout({
                                   e.stopPropagation();
                                   setRenamingChat(chat);
                                 }}
-                                className={`p-1 rounded ${isDark ? "text-gray-400 hover:text-blue-400 hover:bg-gray-600" : "text-gray-400 hover:text-blue-600 hover:bg-gray-100"} transition-colors`}
+                                className={`p-2 rounded ${isDark ? "text-gray-400 hover:text-blue-400 hover:bg-gray-600" : "text-gray-400 hover:text-blue-600 hover:bg-gray-100"} transition-colors`}
                                 title="Rename chat"
                               >
                                 <svg
-                                  className="w-4 h-4"
+                                  className="w-5 h-5"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -525,11 +525,11 @@ export function DashboardLayout({
                             {/* UPDATED: Delete Button - now opens modal */}
                             <button
                               onClick={(e) => handleDeleteChat(chat, e)}
-                              className={`p-1 rounded ${isDark ? "text-gray-400 hover:text-red-400 hover:bg-gray-600" : "text-gray-400 hover:text-red-600 hover:bg-gray-100"} transition-colors`}
+                              className={`p-2 rounded ${isDark ? "text-gray-400 hover:text-red-400 hover:bg-gray-600" : "text-gray-400 hover:text-red-600 hover:bg-gray-100"} transition-colors`}
                               title="Delete chat"
                             >
                               <svg
-                                className="w-4 h-4"
+                                className="w-5 h-5"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -550,31 +550,31 @@ export function DashboardLayout({
                 </div>
               </div>
 
-              {/* User Profile Section at Bottom */}
+              {/* User Profile Section at Bottom - UPDATED: Bigger fonts */}
               <div
-                className={`border-t p-4`}
+                className={`border-t p-5`}
                 style={{
                   borderColor: isDark
                     ? "rgb(55, 65, 81)"
                     : "rgb(229, 231, 235)",
                 }}
               >
-                <div className="flex items-center space-x-3 mb-3">
+                <div className="flex items-center space-x-4 mb-4">
                   <div
-                    className={`w-10 h-10 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md`}
+                    className={`w-12 h-12 ${themeClasses.primary} rounded-full flex items-center justify-center shadow-md`}
                   >
-                    <span className="text-white font-semibold text-sm">
+                    <span className="text-white font-semibold text-base">
                       {getProfileInitial()}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-sm font-medium ${isDark ? "text-gray-100" : "text-gray-900"} truncate`}
+                      className={`text-base font-semibold ${isDark ? "text-gray-100" : "text-gray-900"} truncate`}
                     >
                       {getCurrentDisplayName()}
                     </p>
                     <p
-                      className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} truncate`}
+                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"} truncate`}
                     >
                       {user.email}
                     </p>
@@ -582,13 +582,13 @@ export function DashboardLayout({
                 </div>
 
                 {/* Profile Actions */}
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <button
                     onClick={openProfile}
-                    className={`w-full text-left px-3 py-2 text-sm ${isDark ? "text-gray-300 hover:bg-gray-700 hover:text-gray-100" : "text-gray-700 hover:bg-gray-100"} rounded-md flex items-center space-x-2 transition-colors`}
+                    className={`w-full text-left px-4 py-3 text-base ${isDark ? "text-gray-300 hover:bg-gray-700 hover:text-gray-100" : "text-gray-700 hover:bg-gray-100"} rounded-md flex items-center space-x-3 transition-colors`}
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -611,10 +611,10 @@ export function DashboardLayout({
 
                   <button
                     onClick={handleLogout}
-                    className={`w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-md flex items-center space-x-2 transition-colors`}
+                    className={`w-full text-left px-4 py-3 text-base text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-md flex items-center space-x-3 transition-colors`}
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -635,12 +635,12 @@ export function DashboardLayout({
 
           {/* Main Content */}
           <div className="flex flex-col flex-1 overflow-auto">
-            {/* Consolidated Header */}
+            {/* Consolidated Header - UPDATED: Bigger fonts */}
             <header
               className={`${themeClasses.background} shadow-sm ${themeClasses.borderLight} border-b sticky top-0 z-10`}
             >
               <div className="px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center py-4">
+                <div className="flex justify-between items-center py-5">
                   {/* Left Section - Mobile menu + Title */}
                   <div className="flex items-center space-x-4">
                     {/* Mobile menu button */}
@@ -666,7 +666,7 @@ export function DashboardLayout({
                     {/* Header Title */}
                     <div>
                       <h2
-                        className={`text-xl font-semibold ${themeClasses.text}`}
+                        className={`text-2xl font-semibold ${themeClasses.text}`}
                       >
                         {pathname === "/profile"
                           ? "Profile Settings"
@@ -675,7 +675,7 @@ export function DashboardLayout({
                             : "Dashboard"}
                       </h2>
                       {activeChat && (
-                        <p className={`text-sm ${themeClasses.textMuted}`}>
+                        <p className={`text-base ${themeClasses.textMuted}`}>
                           {filteredMessages.length} message
                           {filteredMessages.length !== 1 ? "s" : ""}
                           {searchQuery &&
@@ -696,7 +696,7 @@ export function DashboardLayout({
                             setSearchQuery("");
                           }
                         }}
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`p-3 rounded-lg transition-colors ${
                           showSearch
                             ? `${themeClasses.primary} text-white`
                             : `${themeClasses.hover} ${themeClasses.textSecondary}`
@@ -704,7 +704,7 @@ export function DashboardLayout({
                         title="Search in current chat"
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-6 h-6"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -723,7 +723,7 @@ export function DashboardLayout({
                     {!activeChat && (
                       <button
                         onClick={() => setShowGlobalSearch(!showGlobalSearch)}
-                        className={`lg:hidden p-2 rounded-lg transition-colors ${
+                        className={`lg:hidden p-3 rounded-lg transition-colors ${
                           showGlobalSearch
                             ? `${themeClasses.primary} text-white`
                             : `${themeClasses.hover} ${themeClasses.textSecondary}`
@@ -731,7 +731,7 @@ export function DashboardLayout({
                         title="Search all chats"
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-6 h-6"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -754,7 +754,7 @@ export function DashboardLayout({
                 {/* In-Chat Search Bar */}
                 {activeChat && showSearch && (
                   <div
-                    className={`pb-3 ${themeClasses.borderLight} border-t pt-3`}
+                    className={`pb-4 ${themeClasses.borderLight} border-t pt-4`}
                   >
                     <div className="relative">
                       <input
@@ -767,10 +767,10 @@ export function DashboardLayout({
                           }
                         }}
                         placeholder="Search messages in this chat..."
-                        className={`w-full pl-10 pr-10 py-2 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} transition-colors placeholder:${themeClasses.textMuted}`}
+                        className={`w-full pl-12 pr-12 py-3 ${themeClasses.border} border rounded-lg ${themeClasses.background} ${themeClasses.text} ${themeClasses.primaryFocus} transition-colors placeholder:${themeClasses.textMuted} text-base`}
                       />
                       <svg
-                        className={`absolute left-3 top-2.5 w-5 h-5 ${themeClasses.textMuted}`}
+                        className={`absolute left-4 top-3.5 w-6 h-6 ${themeClasses.textMuted}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -785,10 +785,10 @@ export function DashboardLayout({
                       {searchQuery && (
                         <button
                           onClick={() => setSearchQuery("")}
-                          className={`absolute right-3 top-2.5 ${themeClasses.textMuted} hover:${themeClasses.text} transition-colors`}
+                          className={`absolute right-4 top-3.5 ${themeClasses.textMuted} hover:${themeClasses.text} transition-colors`}
                         >
                           <svg
-                            className="w-5 h-5"
+                            className="w-6 h-6"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -804,7 +804,7 @@ export function DashboardLayout({
                       )}
                     </div>
                     {searchQuery && (
-                      <p className={`text-xs ${themeClasses.textMuted} mt-2`}>
+                      <p className={`text-sm ${themeClasses.textMuted} mt-3`}>
                         Found {filteredMessages.length} message
                         {filteredMessages.length !== 1 ? "s" : ""} matching "
                         {searchQuery}"
