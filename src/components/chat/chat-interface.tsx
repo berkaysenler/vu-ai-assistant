@@ -1,4 +1,4 @@
-// src/components/chat/chat-interface.tsx (UPDATED - Typewriter effect for AI responses)
+// src/components/chat/chat-interface.tsx (FIXED - Typewriter loop issue)
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -70,11 +70,13 @@ export function ChatInterface({
   const [showDeleteModal, setShowDeleteModal] = useState<Message | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // NEW: State for tracking which AI message is currently typing
+  // FIXED: Better typewriter state management - only for truly NEW messages
   const [typingMessageId, setTypingMessageId] = useState<string | null>(null);
+  const [previousMessagesLength, setPreviousMessagesLength] = useState(0);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLInputElement>(null);
   const { user } = useUser();
   const { getThemeClasses } = useTheme();
 
@@ -83,21 +85,45 @@ export function ChatInterface({
   // Use filtered messages if provided, otherwise use all messages
   const displayMessages = filteredMessages || chat.messages;
 
-  // NEW: Track when new AI messages are added to trigger typewriter effect
+  // FIXED: Only trigger typewriter for newly ADDED AI messages (not when switching chats)
   useEffect(() => {
-    if (displayMessages.length > 0) {
-      const lastMessage = displayMessages[displayMessages.length - 1];
+    // If this is initial load or we're switching chats, don't trigger typewriter
+    if (!initialLoadComplete) {
+      setPreviousMessagesLength(displayMessages.length);
+      setInitialLoadComplete(true);
+      return;
+    }
 
-      // If the last message is from assistant and doesn't have a temp ID, start typing effect
+    // Only trigger if new messages were actually added (not just switching chats)
+    if (displayMessages.length > previousMessagesLength) {
+      const newMessages = displayMessages.slice(previousMessagesLength);
+      const lastNewMessage = newMessages[newMessages.length - 1];
+
+      // Only trigger typewriter for new ASSISTANT messages
       if (
-        lastMessage.role === "ASSISTANT" &&
-        !lastMessage.id.startsWith("temp-") &&
-        lastMessage.id !== typingMessageId
+        lastNewMessage &&
+        lastNewMessage.role === "ASSISTANT" &&
+        !lastNewMessage.id.startsWith("temp-") &&
+        typingMessageId !== lastNewMessage.id
       ) {
-        setTypingMessageId(lastMessage.id);
+        console.log(
+          "Starting typewriter for newly added message:",
+          lastNewMessage.id
+        );
+        setTypingMessageId(lastNewMessage.id);
       }
     }
-  }, [displayMessages, typingMessageId]);
+
+    // Update previous length for next comparison
+    setPreviousMessagesLength(displayMessages.length);
+  }, [displayMessages, initialLoadComplete]);
+
+  // FIXED: Reset state when chat changes (but don't trigger typewriter for existing messages)
+  useEffect(() => {
+    setTypingMessageId(null);
+    setPreviousMessagesLength(0);
+    setInitialLoadComplete(false);
+  }, [chat.id]);
 
   // Auto-scroll to bottom when new messages arrive or during typing
   useEffect(() => {
@@ -238,7 +264,7 @@ export function ChatInterface({
     return lastMessage.role === "USER" && lastMessage.id.startsWith("temp-");
   };
 
-  // NEW: TypewriterMessage component for AI responses
+  // FIXED: TypewriterMessage component with better completion handling
   const TypewriterMessage = ({ message: msg }: { message: Message }) => {
     const shouldType = msg.id === typingMessageId;
     const { displayText, isTyping } = useTypewriter(
@@ -246,12 +272,21 @@ export function ChatInterface({
       shouldType ? 25 : 0
     );
 
-    // When typing is complete, clear the typing message ID
+    // FIXED: Clear typing state when animation completes
     useEffect(() => {
-      if (shouldType && !isTyping && displayText === msg.content) {
-        setTypingMessageId(null);
+      if (
+        shouldType &&
+        !isTyping &&
+        displayText === msg.content &&
+        typingMessageId === msg.id
+      ) {
+        console.log("Typewriter completed for message:", msg.id);
+        // Use setTimeout to prevent state update during render
+        setTimeout(() => {
+          setTypingMessageId(null);
+        }, 100);
       }
-    }, [shouldType, isTyping, displayText, msg.content]);
+    }, [shouldType, isTyping, displayText, msg.content, msg.id]);
 
     return (
       <div className="whitespace-pre-wrap break-words leading-relaxed text-lg">
@@ -409,7 +444,7 @@ export function ChatInterface({
                             </div>
                           )}
 
-                        {/* Message Content - UPDATED: Use TypewriterMessage for AI responses */}
+                        {/* Message Content - Use TypewriterMessage for AI responses */}
                         {editingMessage?.id === msg.id ? (
                           <div className="space-y-3">
                             <textarea
@@ -440,8 +475,7 @@ export function ChatInterface({
                               </button>
                             </div>
                           </div>
-                        ) : // NEW: Use TypewriterMessage for AI responses, regular display for user messages
-                        msg.role === "ASSISTANT" ? (
+                        ) : msg.role === "ASSISTANT" ? (
                           <TypewriterMessage message={msg} />
                         ) : (
                           <div className="whitespace-pre-wrap break-words leading-relaxed text-lg">
