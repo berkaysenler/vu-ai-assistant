@@ -1,4 +1,4 @@
-// src/components/layout/dashboard-layout.tsx (UPDATED - Bigger fonts in sidebar)
+// src/components/layout/dashboard-layout.tsx (UPDATED - Added dashboard navigation button)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -141,6 +141,14 @@ export function DashboardLayout({
     } else {
       window.history.replaceState({}, "", `/dashboard?chat=${chatId}`);
     }
+  };
+
+  // NEW: Navigate back to main dashboard
+  const handleBackToDashboard = () => {
+    // Clear active chat and navigate to main dashboard
+    window.history.replaceState({}, "", "/dashboard");
+    // You might want to trigger a state reset here if needed
+    window.location.href = "/dashboard";
   };
 
   // UPDATED: Use confirmation modal instead of browser confirm
@@ -363,6 +371,35 @@ export function DashboardLayout({
               <div className="flex-1 px-6 py-5 overflow-y-auto">
                 {/* Action Buttons - UPDATED: Bigger fonts */}
                 <div className="space-y-4 mb-8">
+                  {/* NEW: Back to Dashboard Button - Only show when viewing a specific chat */}
+                  {activeChat && (
+                    <button
+                      onClick={handleBackToDashboard}
+                      className={`w-full border px-5 py-4 rounded-lg transition-colors flex items-center justify-center space-x-3 font-semibold text-base ${isDark ? "border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500" : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"}`}
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 5v6m8-6v6"
+                        />
+                      </svg>
+                      <span>Back to Dashboard</span>
+                    </button>
+                  )}
+
                   {/* New Chat Button */}
                   <button
                     onClick={handleNewChat}
@@ -641,7 +678,7 @@ export function DashboardLayout({
             >
               <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center py-5">
-                  {/* Left Section - Mobile menu + Title */}
+                  {/* Left Section - Mobile menu + Title + NEW: Dashboard Nav Button */}
                   <div className="flex items-center space-x-4">
                     {/* Mobile menu button */}
                     <button
