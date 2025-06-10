@@ -1,4 +1,4 @@
-// src/app/auth/login/page.tsx (UPDATED - Themed design)
+// src/app/auth/login/page.tsx (FIXED - Single loading spinner)
 "use client";
 
 import { useState } from "react";
@@ -113,15 +113,13 @@ export default function LoginPage() {
         <div className="text-center">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div
-              className={`w-20 h-20 ${themeClasses.primary} rounded-2xl flex items-center justify-center shadow-lg`}
-            >
+            <div className="w-32 h-32 bg-white rounded-3xl shadow-xl flex items-center justify-center p-3">
               <Image
                 src="/vu-logo.png"
-                alt="VU Assistant Logo"
-                width={48}
-                height={48}
-                className="w-12 h-12 object-contain"
+                alt="Victoria University Logo"
+                width={120}
+                height={120}
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
@@ -241,11 +239,11 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button - FIXED: Removed loading prop, using custom content only */}
             <Button
               type="submit"
               className="w-full py-3 text-base font-semibold tracking-wide"
-              loading={isLoading}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <>

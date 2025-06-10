@@ -1,4 +1,4 @@
-// src/components/layout/dashboard-layout.tsx (UPDATED - Added dashboard navigation button)
+// src/components/layout/dashboard-layout.tsx (UPDATED - Full size VU logo)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -299,7 +299,7 @@ export function DashboardLayout({
         <div
           className={`flex overflow-hidden ${themeClasses.background} shadow-lg w-full max-w-7xl h-full rounded-lg ${themeClasses.border} border`}
         >
-          {/* Sidebar - UPDATED: Bigger fonts throughout */}
+          {/* Sidebar - UPDATED: Full size VU logo */}
           <aside
             className={`fixed inset-y-0 left-0 z-50 w-80 shadow-lg transform transition-transform duration-300 ease-in-out
                  ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -312,7 +312,7 @@ export function DashboardLayout({
             }}
           >
             <div className="flex flex-col h-full">
-              {/* VU Logo and Title - UPDATED: Bigger fonts */}
+              {/* VU Logo and Title - UPDATED: Full size logo, bigger container */}
               <div
                 className={`flex items-center justify-between px-6 py-5 border-b`}
                 style={{
@@ -322,15 +322,14 @@ export function DashboardLayout({
                 }}
               >
                 <div className="flex items-center space-x-4">
-                  <div
-                    className={`w-10 h-10 ${themeClasses.primary} rounded-lg flex items-center justify-center shadow-md`}
-                  >
+                  {/* UPDATED: Bigger, rounded container for full size logo */}
+                  <div className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center p-2">
                     <Image
                       src="/vu-logo.png"
-                      alt="VU Assistant Logo"
-                      width={36}
-                      height={36}
-                      className="w-9 h-9 object-contain"
+                      alt="Victoria University Logo"
+                      width={72}
+                      height={72}
+                      className="w-full h-full object-contain"
                     />
                   </div>
                   <div>

@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx (UPDATED - Bigger fonts throughout)
+// src/app/dashboard/page.tsx (UPDATED - Full size VU logo)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -140,22 +140,17 @@ export default function DashboardPage() {
         />
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center max-w-4xl mx-auto px-4">
-          {/* Welcome Section - UPDATED: Bigger fonts */}
+          {/* Welcome Section - UPDATED: Full size VU logo */}
           <div className="mb-8">
-            <div
-              className={`w-28 h-28 ${themeClasses.primary} rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg`}
-            >
-              <div
-                className={`w-14 h-14 ${themeClasses.background} rounded-lg flex items-center justify-center`}
-              >
-                <Image
-                  src="/vu-icon.ico"
-                  alt="VU Assistant Logo"
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-contain"
-                />
-              </div>
+            {/* UPDATED: Bigger, rounded container for full size VU logo */}
+            <div className="w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mb-8 mx-auto p-4">
+              <Image
+                src="/vu-icon.ico"
+                alt="Victoria University Logo"
+                width={144}
+                height={144}
+                className="w-full h-full object-contain"
+              />
             </div>
             <h2 className={`text-4xl font-bold ${themeClasses.text} mb-4`}>
               Welcome to Victoria University Assistant
