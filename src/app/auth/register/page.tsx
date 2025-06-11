@@ -1,4 +1,4 @@
-// src/app/auth/register/page.tsx (UPDATED - Themed design)
+// src/app/auth/register/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -225,14 +225,14 @@ export default function RegisterPage() {
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <div
-              className={`w-20 h-20 ${themeClasses.primary} rounded-2xl flex items-center justify-center shadow-lg`}
+              className={`w-32 h-32 ${themeClasses.primary} bg-white rounded-3xl shadow-xl flex items-center justify-center p-3`}
             >
               <Image
                 src="/vu-logo.png"
                 alt="VU Assistant Logo"
-                width={48}
-                height={48}
-                className="w-12 h-12 object-contain"
+                width={120}
+                height={120}
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
@@ -404,7 +404,7 @@ export default function RegisterPage() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full py-3 text-base font-semibold tracking-wide"
+              className={`w-full ${themeClasses.primary}  py-3 text-base font-semibold tracking-wide`}
               loading={isLoading}
               disabled={!agreedToTerms}
             >

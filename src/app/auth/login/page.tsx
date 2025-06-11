@@ -1,4 +1,4 @@
-// src/app/auth/login/page.tsx (FIXED - Single loading spinner)
+// src/app/auth/login/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -239,10 +239,10 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Submit Button - FIXED: Removed loading prop, using custom content only */}
+            {/* Submit Button  */}
             <Button
               type="submit"
-              className="w-full py-3 text-base font-semibold tracking-wide"
+              className={`w-full ${themeClasses.primary} py-3 text-base font-semibold tracking-wide`}
               disabled={isLoading}
             >
               {isLoading ? (
