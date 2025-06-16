@@ -2,7 +2,6 @@
 // AI Service for generating responses using OpenAI or fallback to enhanced knowledge base
 
 import {
-  VU_KNOWLEDGE_BASE,
   searchKnowledgeBase,
   formatKnowledgeAnswer,
   getQuickFacts,
